@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>เลือกโต๊ะ</title>
   <h1 class="restaurant-name">Vyse</h1>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
 
   <style>
@@ -190,60 +191,89 @@
   </div>
 
   <script>
-  const pricePerSeat = 50;
-  const selected = new Set();
-  const total = document.getElementById('total');
-
-  document.querySelectorAll('.seat').forEach(seat => {
-    const id = seat.dataset.id;
-
-    if (seat.classList.contains('reserved')) return;
-
-    seat.addEventListener('click', () => {
-      seat.classList.toggle('selected');
-      if (selected.has(id)) {
-        selected.delete(id);
-      } else {
-        selected.add(id);
-      }
-      total.textContent = selected.size * pricePerSeat;
-    });
-  });
-
   function bookSeats() {
-    if (selected.size === 0) {
-      alert("กรุณาเลือกโต๊ะก่อน");
-      return;
-    }
-
-    const bookedTables = [...selected];  // ✅ ประกาศตัวแปรให้ถูกต้อง
-    const url = "https://script.google.com/macros/s/AKfycbzy7edObDE0RsZq1FArXun6ADkhoIHb9dd1QjEhjlKnPt1bO0Y4uJfHK_bkENA9q-DiqA/exec";
-
-    // ส่งข้อมูลแยกแต่ละโต๊ะไป Google Sheets
-    bookedTables.forEach(table => {
-      fetch(url, {
-        method: "POST",
-        body: JSON.stringify({
-          table: table,
-          status: "Booked",
-          name: "ลูกค้าทั่วไป",
-          note: ""
-        }),
-        headers: {
-          "Content-Type": "application/json"
-        }
-      })
-      .then(res => res.json())
-      .then(data => {
-        console.log("✅ จองสำเร็จ:", table, data);
-      })
-      .catch(err => {
-        console.error("❌ จองล้มเหลว:", table, err);
-      });
-    });
-
-    alert(`คุณจองโต๊ะ: ${bookedTables.join(', ')}\nระบบได้บันทึกลง Google Sheets แล้ว`);
+  if (selected.size === 0) {
+    alert("กรุณาเลือกโต๊ะก่อน");
+    return;
   }
+
+  const bookedTables = [...selected];
+  const url = "https://script.google.com/macros/s/AKfycbyPBchWeOWEOF71695gujPcAQlpZsOlQdSQ4CVFtL0JqklVLZUdaCelOUbQmL7EZgeFPQ/exec"; // 🔁 เปลี่ยนเป็น URL Web App จาก GAS
+
+  fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      userId: userId,
+      tables: bookedTables,
+      status: "Booked"
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    console.log("✅ ข้อมูลจองส่งสำเร็จ:", data);
+    if (liff.isInClient()) {
+      liff.sendMessages([
+        {
+          type: "flex",
+          altText: "ยืนยันการจองโต๊ะ",
+          contents: {
+            type: "bubble",
+            body: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: "ยืนยันการจอง",
+                  weight: "bold",
+                  size: "lg",
+                  margin: "none"
+                },
+                {
+                  type: "text",
+                  text: `โต๊ะ: ${bookedTables.join(", ")}`,
+                  margin: "md"
+                },
+                {
+                  type: "text",
+                  text: `รวม ${bookedTables.length * 50} บาท`,
+                  margin: "sm"
+                }
+              ]
+            }
+          }
+        }
+      ])
+      .then(() => liff.closeWindow())
+      .catch(err => console.error("❌ Flex ส่งล้มเหลว:", err));
+    } else {
+      alert("✅ จองสำเร็จ โต๊ะ: " + bookedTables.join(", "));
+    }
+  })
+  .catch(err => {
+    console.error("❌ ส่งข้อมูลล้มเหลว:", err);
+    alert("❌ จองไม่สำเร็จ โปรดลองใหม่");
+  });
+}
+
+
+  let userId = null;
+
+  liff.init({ liffId: "2007619597" }) // 🔁 เปลี่ยนเป็น LIFF ID ของคุณ
+    .then(() => {
+      if (!liff.isLoggedIn()) {
+        liff.login();
+      } else {
+        liff.getProfile().then(profile => {
+          userId = profile.userId;
+          console.log("🔐 userId:", userId);
+        });
+      }
+    })
+    .catch(err => {
+      console.error("❌ LIFF Init Error:", err);
+    });
 </script>
 
 </body>
