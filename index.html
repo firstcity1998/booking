@@ -57,25 +57,35 @@
   </div>
 
 <script>
-  const pricePerSeat = 50;
   const seatMap = document.getElementById('seatMap');
   const total = document.getElementById('total');
+  const pricePerSeat = 50;
   const selected = new Set();
-  const reservedSeats = ["A3", "B4"];
-  const allSeats = ["A1","A2","A3","A4","A5","B1","B2","B3","B4","B5","C1","C2","C3","C4","C5","D1","D2","D3","D4","D5","E1","E2","E3","E4","E5","F1","F2","F3","F4","F5"];
-  
+  const reservedSeats = ["A3", "B4"]; // ปรับได้ภายหลังเมื่อเชื่อมกับ Google Sheet
+
+  const allSeats = ["A1","A2","A3","A4","A5",
+                    "B1","B2","B3","B4","B5",
+                    "C1","C2","C3","C4","C5",
+                    "D1","D2","D3","D4","D5",
+                    "E1","E2","E3","E4","E5",
+                    "F1","F2","F3","F4","F5"];
+
   allSeats.forEach(id => {
     const seat = document.createElement('div');
     seat.className = 'seat';
     seat.textContent = id;
     seat.dataset.id = id;
+
     if (reservedSeats.includes(id)) {
       seat.classList.add('reserved');
     } else {
       seat.addEventListener('click', () => {
         seat.classList.toggle('selected');
-        if (selected.has(id)) selected.delete(id);
-        else selected.add(id);
+        if (selected.has(id)) {
+          selected.delete(id);
+        } else {
+          selected.add(id);
+        }
         total.textContent = selected.size * pricePerSeat;
       });
     }
@@ -88,7 +98,7 @@
     if (selected.size === 0) return alert("กรุณาเลือกโต๊ะก่อน");
 
     const bookedTables = [...selected];
-    const url = "https://script.google.com/macros/s/AKfycbzV9HN7dgREmpdCvreLMaPNuiwmlKnp8s1sdQkRGTBOTL4fcjLZyGkFuuY69i3WNjDImA/exec"; // 👈 เปลี่ยนเป็น URL จาก Google Apps Script ที่ deploy แบบ Web App แล้ว
+    const url = "https://script.google.com/macros/s/AKfycbzV9HN7dgREmpdCvreLMaPNuiwmlKnp8s1sdQkRGTBOTL4fcjLZyGkFuuY69i3WNjDImA/exec"; // <- เปลี่ยนเป็นลิงก์จาก GAS
 
     const res = await fetch(url, {
       method: "POST",
@@ -102,7 +112,6 @@
 
     if (!res.ok) return alert("❌ จองไม่สำเร็จ");
     const data = await res.json();
-    console.log("📦 ส่งข้อมูลสำเร็จ:", data);
 
     if (liff.isInClient()) {
       await liff.sendMessages([
@@ -129,18 +138,17 @@
     }
   }
 
-  // เริ่มใช้งาน LIFF
-  liff.init({ liffId: "2007619597-pL1yYoj3" }) // 👈 เปลี่ยนเป็น LIFF ID จริงของคุณ
+  liff.init({ liffId: "2007619597-pL1yYoj3" }) // <- ใส่ LIFF ID ของคุณ
     .then(() => {
       if (!liff.isLoggedIn()) liff.login();
       else {
         liff.getProfile().then(profile => {
           userId = profile.userId;
-          console.log("🔐 userId:", userId);
+          console.log("👤 userId:", userId);
         });
       }
-    })
-    .catch(err => console.error("❌ LIFF Init Error:", err));
+    });
 </script>
+
 </body>
 </html>
