@@ -61,14 +61,16 @@
   const total = document.getElementById('total');
   const pricePerSeat = 50;
   const selected = new Set();
-  const reservedSeats = ["A3", "B4"]; // ปรับได้ภายหลังเมื่อเชื่อมกับ Google Sheet
+  const reservedSeats = ["A3", "B4"]; // ← โต๊ะที่จองแล้ว สามารถโหลดจาก Google Sheet ภายหลังได้
 
-  const allSeats = ["A1","A2","A3","A4","A5",
-                    "B1","B2","B3","B4","B5",
-                    "C1","C2","C3","C4","C5",
-                    "D1","D2","D3","D4","D5",
-                    "E1","E2","E3","E4","E5",
-                    "F1","F2","F3","F4","F5"];
+  const allSeats = [
+    "A1", "A2", "A3", "A4", "A5",
+    "B1", "B2", "B3", "B4", "B5",
+    "C1", "C2", "C3", "C4", "C5",
+    "D1", "D2", "D3", "D4", "D5",
+    "E1", "E2", "E3", "E4", "E5",
+    "F1", "F2", "F3", "F4", "F5"
+  ];
 
   allSeats.forEach(id => {
     const seat = document.createElement('div');
@@ -96,59 +98,88 @@
 
   async function bookSeats() {
     if (selected.size === 0) return alert("กรุณาเลือกโต๊ะก่อน");
+    if (!userId) return alert("ระบบกำลังโหลดข้อมูลผู้ใช้ กรุณารอสักครู่...");
 
     const bookedTables = [...selected];
-    const url = "https://script.google.com/macros/s/AKfycbzV9HN7dgREmpdCvreLMaPNuiwmlKnp8s1sdQkRGTBOTL4fcjLZyGkFuuY69i3WNjDImA/exec"; // <- เปลี่ยนเป็นลิงก์จาก GAS
+    const url = "https://script.google.com/macros/s/AKfycbzV9HN7dgREmpdCvreLMaPNuiwmlKnp8s1sdQkRGTBOTL4fcjLZyGkFuuY69i3WNjDImA/exec"; // เปลี่ยนเป็น GAS URL ของคุณ
 
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId,
-        tables: bookedTables,
-        status: "Booked"
-      })
-    });
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          tables: bookedTables,
+          status: "Booked"
+        })
+      });
 
-    if (!res.ok) return alert("❌ จองไม่สำเร็จ");
-    const data = await res.json();
+      if (!res.ok) throw new Error("ส่งข้อมูลไม่สำเร็จ");
 
-    if (liff.isInClient()) {
-      await liff.sendMessages([
-        {
-          type: "flex",
-          altText: "ยืนยันการจองโต๊ะ",
-          contents: {
-            type: "bubble",
-            body: {
-              type: "box",
-              layout: "vertical",
-              contents: [
-                { type: "text", text: "ยืนยันการจอง", weight: "bold", size: "lg" },
-                { type: "text", text: `โต๊ะ: ${bookedTables.join(", ")}` },
-                { type: "text", text: `รวม ${bookedTables.length * pricePerSeat} บาท` }
-              ]
+      const data = await res.json();
+      console.log("✅ ส่งไป Google Sheet แล้ว:", data);
+
+      if (liff.isInClient()) {
+        await liff.sendMessages([
+          {
+            type: "flex",
+            altText: `จองโต๊ะสำเร็จ: ${bookedTables.join(", ")}`,
+            contents: {
+              type: "bubble",
+              body: {
+                type: "box",
+                layout: "vertical",
+                contents: [
+                  {
+                    type: "text",
+                    text: "ยืนยันการจอง",
+                    weight: "bold",
+                    size: "lg",
+                    margin: "none"
+                  },
+                  {
+                    type: "text",
+                    text: `โต๊ะ: ${bookedTables.join(", ")}`,
+                    wrap: true
+                  },
+                  {
+                    type: "text",
+                    text: `รวม ${bookedTables.length * pricePerSeat} บาท`,
+                    wrap: true
+                  }
+                ]
+              }
             }
           }
-        }
-      ]);
-      liff.closeWindow();
-    } else {
-      alert(`✅ จองสำเร็จ โต๊ะ: ${bookedTables.join(", ")}`);
+        ]);
+        liff.closeWindow();
+      } else {
+        alert(`✅ จองสำเร็จ โต๊ะ: ${bookedTables.join(", ")}`);
+      }
+    } catch (err) {
+      console.error("❌ เกิดข้อผิดพลาด:", err);
+      alert("❌ จองไม่สำเร็จ โปรดลองใหม่");
     }
   }
 
-  liff.init({ liffId: "2007619597-pL1yYoj3" }) // <- ใส่ LIFF ID ของคุณ
+  // เริ่มต้น LIFF
+  liff.init({ liffId: "2007619597-pL1yYoj3" }) // แก้เป็น LIFF ID ของคุณ
     .then(() => {
-      if (!liff.isLoggedIn()) liff.login();
-      else {
+      if (!liff.isLoggedIn()) {
+        liff.login();
+      } else {
         liff.getProfile().then(profile => {
           userId = profile.userId;
-          console.log("👤 userId:", userId);
+          console.log("🔐 userId:", userId);
         });
       }
+    })
+    .catch(err => {
+      console.error("❌ LIFF Init Error:", err);
+      alert("ไม่สามารถโหลด LIFF ได้ กรุณารีเฟรช");
     });
 </script>
+
 
 </body>
 </html>
