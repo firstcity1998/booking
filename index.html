@@ -112,7 +112,7 @@
       });
   };
 
-  function bookSeats() {
+ function bookSeats() {
   if (selected.size === 0) {
     alert("กรุณาเลือกที่นั่งก่อน");
     return;
@@ -120,48 +120,47 @@
 
   const flexMessage = { 
     type: "flex",
-  altText: "📌 ยืนยันการจองโต๊ะ",
-  contents: {
-    type: "bubble",
-    header: {
-      type: "box",
-      layout: "vertical",
-      contents: [{
-        type: "text",
-        text: "📌 ร้าน Vyse",
-        weight: "bold",
-        size: "lg",
-        color: "#f59e0b"
-      }]
-    },
-    body: {
-      type: "box",
-      layout: "vertical",
-      spacing: "sm",
-      contents: [
-        {
+    altText: "📌 ยืนยันการจองโต๊ะ",
+    contents: {
+      type: "bubble",
+      header: {
+        type: "box",
+        layout: "vertical",
+        contents: [{
           type: "text",
-          text: `คุณ ${window.displayName} ได้จองโต๊ะ`,
+          text: "📌 ร้าน Vyse",
           weight: "bold",
-          size: "md"
-        },
-        {
-          type: "text",
-          text: `ที่นั่ง: ${Array.from(selected).join(", ")}`,
-          size: "sm",
-          wrap: true
-        },
-        {
-          type: "text",
-          text: `รวมทั้งหมด: ${selected.size * pricePerSeat} บาท`,
-          size: "sm",
-          weight: "bold",
-          color: "#10b981"
-        }
-      ]
+          size: "lg",
+          color: "#f59e0b"
+        }]
+      },
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        contents: [
+          {
+            type: "text",
+            text: `คุณ ${window.displayName} ได้จองโต๊ะ`,
+            weight: "bold",
+            size: "md"
+          },
+          {
+            type: "text",
+            text: `ที่นั่ง: ${Array.from(selected).join(", ")}`,
+            size: "sm",
+            wrap: true
+          },
+          {
+            type: "text",
+            text: `รวมทั้งหมด: ${selected.size * pricePerSeat} บาท`,
+            size: "sm",
+            weight: "bold",
+            color: "#10b981"
+          }
+        ]
+      }
     }
-  }
-};
   };
 
   liff.sendMessages([flexMessage])
@@ -173,6 +172,8 @@
       console.error("Send message error:", err);
       alert("❌ ส่งข้อมูลไม่สำเร็จ");
     });
+}
+
  
 </script>
 
