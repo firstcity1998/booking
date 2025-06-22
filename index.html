@@ -98,84 +98,53 @@
 
   async function bookSeats() {
   if (selected.size === 0) return alert("กรุณาเลือกโต๊ะก่อน");
-  
+  if (!userId) return alert("ระบบกำลังโหลดข้อมูลผู้ใช้ กรุณารอสักครู่...");
 
   const bookedTables = [...selected];
   const totalPrice = bookedTables.length * pricePerSeat;
-
-  await liff.init({ liffId: "YOUR_LIFF_ID" }); // เปลี่ยนเป็น LIFF ID ของคุณ
-
-  const flexMessage = {
-    type: "flex",
-    altText: "🪑 ยืนยันการจองโต๊ะ",
-    contents: {
-      type: "bubble",
-      header: {
-        type: "box",
-        layout: "vertical",
-        contents: [
-          {
-            type: "text",
-            text: "🪑 รายละเอียดการจอง",
-            weight: "bold",
-            size: "lg",
-            color: "#facc15"
+console.log("📦 จะส่ง Flex:", bookedTables);
+  // ส่ง Flex Message อย่างเดียว
+  try {
+    if (liff.isInClient()) {
+      await liff.sendMessages([
+        {
+          type: "flex",
+          altText: `จองโต๊ะสำเร็จ: ${bookedTables.join(", ")}`,
+          contents: {
+            type: "bubble",
+            body: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: "ยืนยันการจอง",
+                  weight: "bold",
+                  size: "lg"
+                },
+                {
+                  type: "text",
+                  text: `โต๊ะ: ${bookedTables.join(", ")}`,
+                  wrap: true
+                },
+                {
+                  type: "text",
+                  text: `รวม ${totalPrice} บาท`,
+                  wrap: true
+                }
+              ]
+            }
           }
-        ]
-      },
-      body: {
-        type: "box",
-        layout: "vertical",
-        spacing: "sm",
-        contents: [
-          {
-            type: "text",
-            text: `โต๊ะที่จอง: ${bookedTables.join(", ")}`,
-            wrap: true
-          },
-          {
-            type: "text",
-            text: `รวมทั้งหมด: ${totalPrice} บาท`,
-            wrap: true
-          }
-        ]
-      },
-      footer: {
-        type: "box",
-        layout: "vertical",
-        contents: [
-          {
-            type: "text",
-            text: "ขอบคุณที่จองกับร้าน Vyse 🎉",
-            size: "sm",
-            color: "#999999",
-            align: "center"
-          }
-        ]
-      },
-      styles: {
-        header: {
-          backgroundColor: "#1e293b"
-        },
-        body: {
-          backgroundColor: "#0f172a"
-        },
-        footer: {
-          backgroundColor: "#1e293b"
         }
-      }
+      ]);
+      liff.closeWindow();
+    } else {
+      alert(`✅ จองสำเร็จ โต๊ะ: ${bookedTables.join(", ")}`);
     }
-  };
-
-  liff.sendMessages([flexMessage])
-    .then(() => {
-      alert("จองสำเร็จ! กรุณาดูในแชต LINE");
-      location.reload();
-    })
-    .catch((err) => {
-      console.error("Error sending message: ", err);
-      alert("ไม่สามารถส่งข้อความ LINE ได้");
-    });
+  } catch (err) {
+    console.error("❌ ส่ง Flex Message ไม่สำเร็จ:", err);
+    alert("❌ เกิดข้อผิดพลาดในการแจ้งเตือน");
+  }
 }
 
 </script>
