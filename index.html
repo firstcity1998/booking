@@ -102,7 +102,7 @@
 
   const bookedTables = [...selected];
   const totalPrice = bookedTables.length * pricePerSeat;
-
+console.log("📦 จะส่ง Flex:", bookedTables);
   // ส่ง Flex Message อย่างเดียว
   try {
     if (liff.isInClient()) {
