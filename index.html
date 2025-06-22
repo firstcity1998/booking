@@ -98,7 +98,7 @@
 
   async function bookSeats() {
   if (selected.size === 0) return alert("กรุณาเลือกโต๊ะก่อน");
-  if (!userId) return alert("ระบบกำลังโหลดข้อมูลผู้ใช้ กรุณารอสักครู่...");
+  //if (!userId) return alert("ระบบกำลังโหลดข้อมูลผู้ใช้ กรุณารอสักครู่...");
 
   const bookedTables = [...selected];
   const totalPrice = bookedTables.length * pricePerSeat;
