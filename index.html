@@ -190,60 +190,61 @@
   </div>
 
   <script>
-    const pricePerSeat = 50;
-    const selected = new Set();
-    const total = document.getElementById('total');
+  const pricePerSeat = 50;
+  const selected = new Set();
+  const total = document.getElementById('total');
 
-    document.querySelectorAll('.seat').forEach(seat => {
-      const id = seat.dataset.id;
+  document.querySelectorAll('.seat').forEach(seat => {
+    const id = seat.dataset.id;
 
-      if (seat.classList.contains('reserved')) return;
+    if (seat.classList.contains('reserved')) return;
 
-      seat.addEventListener('click', () => {
-        seat.classList.toggle('selected');
-        if (selected.has(id)) {
-          selected.delete(id);
-        } else {
-          selected.add(id);
+    seat.addEventListener('click', () => {
+      seat.classList.toggle('selected');
+      if (selected.has(id)) {
+        selected.delete(id);
+      } else {
+        selected.add(id);
+      }
+      total.textContent = selected.size * pricePerSeat;
+    });
+  });
+
+  function bookSeats() {
+    if (selected.size === 0) {
+      alert("กรุณาเลือกโต๊ะก่อน");
+      return;
+    }
+
+    const bookedTables = [...selected];  // ✅ ประกาศตัวแปรให้ถูกต้อง
+    const url = "https://script.google.com/macros/s/AKfycbzy7edObDE0RsZq1FArXun6ADkhoIHb9dd1QjEhjlKnPt1bO0Y4uJfHK_bkENA9q-DiqA/exec";
+
+    // ส่งข้อมูลแยกแต่ละโต๊ะไป Google Sheets
+    bookedTables.forEach(table => {
+      fetch(url, {
+        method: "POST",
+        body: JSON.stringify({
+          table: table,
+          status: "Booked",
+          name: "ลูกค้าทั่วไป",
+          note: ""
+        }),
+        headers: {
+          "Content-Type": "application/json"
         }
-        total.textContent = selected.size * pricePerSeat;
+      })
+      .then(res => res.json())
+      .then(data => {
+        console.log("✅ จองสำเร็จ:", table, data);
+      })
+      .catch(err => {
+        console.error("❌ จองล้มเหลว:", table, err);
       });
     });
 
-    function bookSeats() {
-      if (selected.size === 0) {
-        alert("กรุณาเลือกโต๊ะก่อน");
-        return;
-      }
-      alert(`คุณจองโต๊ะ: ${[...selected].join(', ')}\nรวม ${selected.size * pricePerSeat} บาท`);
-    }
-    function bookSeats() {
-  if (selected.size === 0) {
-    alert("กรุณาเลือกโต๊ะก่อน");
-    return;
+    alert(`คุณจองโต๊ะ: ${bookedTables.join(', ')}\nระบบได้บันทึกลง Google Sheets แล้ว`);
   }
+</script>
 
-  const url = "https://script.google.com/macros/s/AKfycbzy7edObDE0RsZq1FArXun6ADkhoIHb9dd1QjEhjlKnPt1bO0Y4uJfHK_bkENA9q-DiqA/exec";  // ใส่ลิงก์ Web App ของคุณ
-
-fetch(url, {
-  method: "POST",
-  body: JSON.stringify({
-    table: "A1",
-    status: "Booked",
-    name: "คุณลูกค้า",
-    note: "ไม่มี"
-  }),
-  headers: {
-    "Content-Type": "application/json"
-  }
-})
-.then(res => res.json())
-.then(data => {
-  console.log("Response:", data);
-});
-
-  alert(`คุณจองโต๊ะ: ${bookedTables.join(', ')}\nระบบได้บันทึกลง Google Sheets แล้ว`);
-}
-  </script>
 </body>
 </html>
