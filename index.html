@@ -6,6 +6,15 @@
   <title>เลือกโต๊ะ</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
+    /* เหมือนเดิมไม่เปลี่ยนจากที่คุณใช้ */
+    .restaurant-name {
+      font-size: 36px;
+      font-weight: bold;
+      text-align: center;
+      margin: 20px 0 12px;
+      color: #facc15;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+    }
     body {
       font-family: 'Prompt', sans-serif;
       background: linear-gradient(to bottom, #2d004b, #0e0e0e);
@@ -17,82 +26,20 @@
       align-items: center;
       min-height: 100vh;
     }
-    .restaurant-name {
-      font-size: 36px;
-      font-weight: bold;
-      text-align: center;
-      margin: 20px 0 12px;
-      color: #facc15;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.6);
-    }
-    .container {
-      width: 100%;
-      max-width: 400px;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-    .stage {
-      background: #b91c1c;
-      text-align: center;
-      padding: 10px;
-      border-radius: 8px;
-      margin-bottom: 16px;
-    }
-    .seat-map {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 10px;
-      margin-bottom: 20px;
-      position: relative;
-    }
-    .seat {
-      background: #444;
-      padding: 10px;
-      border-radius: 6px;
-      text-align: center;
-      cursor: pointer;
-    }
-    .seat.selected {
-      background: #facc15;
-      color: black;
-    }
-    .seat.reserved {
-      background: #9ca3af;
-      cursor: not-allowed;
-    }
-    .legend {
-      display: flex;
-      justify-content: space-around;
-      font-size: 14px;
-      margin-bottom: 10px;
-    }
-    .legend div {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 3px;
-    }
+    .container { max-width: 400px; width: 100%; padding: 20px; box-sizing: border-box; }
+    .stage { background: #b91c1c; text-align: center; padding: 10px; border-radius: 8px; margin-bottom: 16px; }
+    .seat-map { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px; }
+    .seat { background: #444; padding: 10px; border-radius: 6px; text-align: center; cursor: pointer; }
+    .seat.selected { background: #facc15; color: black; }
+    .seat.reserved { background: #9ca3af; cursor: not-allowed; }
+    .legend { display: flex; justify-content: space-around; font-size: 14px; margin-bottom: 10px; }
+    .legend div { display: flex; align-items: center; gap: 6px; }
+    .dot { width: 12px; height: 12px; border-radius: 3px; }
     .dot.available { background: #444; }
     .dot.selected { background: #facc15; }
     .dot.reserved { background: #9ca3af; }
-    .summary {
-      text-align: center;
-      margin-bottom: 10px;
-    }
-    button {
-      width: 100%;
-      padding: 12px;
-      background: #f59e0b;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      color: black;
-      cursor: pointer;
-    }
+    .summary { text-align: center; margin-bottom: 10px; }
+    button { width: 100%; padding: 12px; background: #f59e0b; border: none; border-radius: 8px; font-size: 16px; color: black; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -109,97 +56,91 @@
     <button onclick="bookSeats()">จองเลย</button>
   </div>
 
-  <script>
-    const seatMap = document.getElementById('seatMap');
-    const total = document.getElementById('total');
-    const pricePerSeat = 50;
-    const selected = new Set();
-    const reservedSeats = ["A3", "B4"]; // ที่จองแล้ว
+<script>
+  const pricePerSeat = 50;
+  const seatMap = document.getElementById('seatMap');
+  const total = document.getElementById('total');
+  const selected = new Set();
+  const reservedSeats = ["A3", "B4"];
+  const allSeats = ["A1","A2","A3","A4","A5","B1","B2","B3","B4","B5","C1","C2","C3","C4","C5","D1","D2","D3","D4","D5","E1","E2","E3","E4","E5","F1","F2","F3","F4","F5"];
+  
+  allSeats.forEach(id => {
+    const seat = document.createElement('div');
+    seat.className = 'seat';
+    seat.textContent = id;
+    seat.dataset.id = id;
+    if (reservedSeats.includes(id)) {
+      seat.classList.add('reserved');
+    } else {
+      seat.addEventListener('click', () => {
+        seat.classList.toggle('selected');
+        if (selected.has(id)) selected.delete(id);
+        else selected.add(id);
+        total.textContent = selected.size * pricePerSeat;
+      });
+    }
+    seatMap.appendChild(seat);
+  });
 
-    const allSeats = ["A1","A2","A3","A4","A5",
-                      "B1","B2","B3","B4","B5",
-                      "C1","C2","C3","C4","C5",
-                      "D1","D2","D3","D4","D5",
-                      "E1","E2","E3","E4","E5",
-                      "F1","F2","F3","F4","F5"];
+  let userId = null;
 
-    allSeats.forEach(id => {
-      const seat = document.createElement('div');
-      seat.className = 'seat';
-      seat.textContent = id;
-      seat.dataset.id = id;
-      if (reservedSeats.includes(id)) {
-        seat.classList.add('reserved');
-      } else {
-        seat.addEventListener('click', () => {
-          seat.classList.toggle('selected');
-          if (selected.has(id)) {
-            selected.delete(id);
-          } else {
-            selected.add(id);
-          }
-          total.textContent = selected.size * pricePerSeat;
-        });
-      }
-      seatMap.appendChild(seat);
+  async function bookSeats() {
+    if (selected.size === 0) return alert("กรุณาเลือกโต๊ะก่อน");
+
+    const bookedTables = [...selected];
+    const url = "https://script.google.com/macros/s/AKfycbzV9HN7dgREmpdCvreLMaPNuiwmlKnp8s1sdQkRGTBOTL4fcjLZyGkFuuY69i3WNjDImA/exec"; // 👈 เปลี่ยนเป็น URL จาก Google Apps Script ที่ deploy แบบ Web App แล้ว
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId,
+        tables: bookedTables,
+        status: "Booked"
+      })
     });
 
-    let userId = null;
+    if (!res.ok) return alert("❌ จองไม่สำเร็จ");
+    const data = await res.json();
+    console.log("📦 ส่งข้อมูลสำเร็จ:", data);
 
-    async function bookSeats() {
-      if (selected.size === 0) return alert("กรุณาเลือกโต๊ะก่อน");
-      const bookedTables = [...selected];
-      const url = "https://script.google.com/macros/s/AKfycbyPBchWeOWEOF71695gujPcAQlpZsOlQdSQ4CVFtL0JqklVLZUdaCelOUbQmL7EZgeFPQ/exec";
-
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId,
-          tables: bookedTables,
-          status: "Booked"
-        })
-      });
-
-      if (!res.ok) return alert("❌ จองไม่สำเร็จ");
-      const data = await res.json();
-      console.log("ส่งข้อมูลสำเร็จ:", data);
-
-      if (liff.isInClient()) {
-        await liff.sendMessages([
-          {
-            type: "flex",
-            altText: "ยืนยันการจองโต๊ะ",
-            contents: {
-              type: "bubble",
-              body: {
-                type: "box",
-                layout: "vertical",
-                contents: [
-                  { type: "text", text: "ยืนยันการจอง", weight: "bold", size: "lg" },
-                  { type: "text", text: `โต๊ะ: ${bookedTables.join(", ")}` },
-                  { type: "text", text: `รวม ${bookedTables.length * pricePerSeat} บาท` }
-                ]
-              }
+    if (liff.isInClient()) {
+      await liff.sendMessages([
+        {
+          type: "flex",
+          altText: "ยืนยันการจองโต๊ะ",
+          contents: {
+            type: "bubble",
+            body: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                { type: "text", text: "ยืนยันการจอง", weight: "bold", size: "lg" },
+                { type: "text", text: `โต๊ะ: ${bookedTables.join(", ")}` },
+                { type: "text", text: `รวม ${bookedTables.length * pricePerSeat} บาท` }
+              ]
             }
           }
-        ]);
-        liff.closeWindow();
-      } else {
-        alert(`✅ จองสำเร็จ โต๊ะ: ${bookedTables.join(", ")}`);
-      }
-    }
-
-    liff.init({ liffId: "YOUR_LIFF_ID" })
-      .then(() => {
-        if (!liff.isLoggedIn()) liff.login();
-        else {
-          liff.getProfile().then(profile => {
-            userId = profile.userId;
-            console.log("userId:", userId);
-          });
         }
-      });
-  </script>
+      ]);
+      liff.closeWindow();
+    } else {
+      alert(`✅ จองสำเร็จ โต๊ะ: ${bookedTables.join(", ")}`);
+    }
+  }
+
+  // เริ่มใช้งาน LIFF
+  liff.init({ liffId: "2007619597-pL1yYoj3" }) // 👈 เปลี่ยนเป็น LIFF ID จริงของคุณ
+    .then(() => {
+      if (!liff.isLoggedIn()) liff.login();
+      else {
+        liff.getProfile().then(profile => {
+          userId = profile.userId;
+          console.log("🔐 userId:", userId);
+        });
+      }
+    })
+    .catch(err => console.error("❌ LIFF Init Error:", err));
+</script>
 </body>
 </html>
