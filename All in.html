@@ -22,14 +22,13 @@
 
     .layout {
   position: relative;
-  width: 100%;
-  max-width: 900px;
-  aspect-ratio: 9 / 6.5; /* ให้คงสัดส่วน */
-  background: rgba(255, 255, 255, 0.1);
+  width: 900px;
+  height: 650px;
+  margin: 0 auto;
+  background: rgba(255,255,255,0.05);
   border-radius: 16px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.4);
-  transition: transform 0.3s ease;
 }
+
 
 
     .stage {
@@ -232,7 +231,7 @@
   let displayName = "คุณ";
 
   async function initLiff() {
-    await liff.init({ liffId: "2007619597-pL1yYoj3" }); // ← ใส่ LIFF ID จริงของคุณ
+    await liff.init({ liffId: "007619597-pL1yYoj3" }); // ← ใส่ LIFF ID จริงของคุณ
     if (!liff.isLoggedIn()) {
       liff.login();
     } else {
