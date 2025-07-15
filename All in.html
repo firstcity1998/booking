@@ -14,7 +14,7 @@
 .restaurant-name {
       position: absolute;
       top: 30%;
-      left: 50%;
+      left: 40%;
       transform: translate(-50%, -50%);
       font-size: 36px;
       font-weight: bold;
@@ -63,8 +63,8 @@
 
     .table {
       position: absolute;
-      width: 50px;
-      height: 50px;
+      width: 70px;
+      height: 70px;
       background: black;
       color: white;
       font-weight: bold;
@@ -76,6 +76,13 @@
       cursor: pointer;
       transition: background 0.3s;
     }
+
+    .table-b {
+  width: 50px;
+  height: 50px;
+  font-size: 18px;
+  background: #111;
+}
 
     .table.selected {
       background-color: #2ecc71;
@@ -113,13 +120,13 @@
     }
 
     .seat {
-      width: 40px;
-      height: 200px;
+      width: 80px;
+      height: 270px;
     }
 
     .bar {
       width: 60px;
-      height: 190px;
+      height: 240px;
     }
 
     .bar-center {
@@ -129,36 +136,36 @@
     }
 
     /* ปรับตำแหน่งใหม่ให้อยู่กลางจอมากขึ้น */
-    .t1 { top: 30px; left: 400px; }
+    .t1 { top: 5px; left: 400px; }
     .t2 { top: 90px; left: 400px; }
 
-    .t3 { top: 160px; left: 345px; }
-    .t4 { top: 220px; left: 345px; }
-    .t5 { top: 280px; left: 345px; }
-    .t6 { top: 340px; left: 345px; }
+    .t3 { top: 160px; left: 300px; }
+    .t4 { top: 235px; left: 300px; }
+    .t5 { top: 310px; left: 300px; }
+    .t6 { top: 385px; left: 300px; }
 
-    .t7 { top: 160px; left: 20px; }
-    .t8 { top: 220px; left: 20px; }
-    .t9 { top: 280px; left: 20px; }
-    .t10 { top: 340px; left: 20px; }
-    .t11 { top: 400px; left: 20px; }
+    .t7 { top: 140px; left: 20px; }
+    .t8 { top: 215px; left: 20px; }
+    .t9 { top: 290px; left: 20px; }
+    .t10 { top: 365px; left: 20px; }
+    .t11 { top: 440px; left: 20px; }
 
-    .t12 { top: 500px; left: 10px; }
-    .t13 { top: 560px; left: 10px; }
+    .t12 { top: 520px; left: 5px; }
+    .t13 { top: 595px; left: 5px; }
 
-    .b1 { top: 460px; left: 250px; }
-    .b2 { top: 510px; left: 250px; }
-    .b3 { top: 560px; left: 250px; }
-    .b4 { top: 610px; left: 250px; }
+    .b1 { top: 460px; left: 230px; }
+    .b2 { top: 520px; left: 230px; }
+    .b3 { top: 580px; left: 230px; }
+    .b4 { top: 640px; left: 230px; }
 
-    .seat { top: 160px; left: 400px; }
+    .seat { top: 170px; left: 380px; }
 
     .bar-left   { top: 460px; left: 300px; }
     .bar-right  { top: 460px; left: 520px; }
     .bar-center { top: 460px; left: 365px; }
 
     .door-top-right { top: 20px; left: 360px; }
-    .door-bottom-left { top: 620px; left: 15px; }
+    .door-bottom-left { top: 680px; left: 15px; }
 
     #summary {
       position: fixed;
@@ -192,10 +199,10 @@
     <div class="table t11" data-table="11">11</div>
     <div class="table t12" data-table="12">12</div>
     <div class="table t13" data-table="13">13</div>
-    <div class="table b1" data-table="B1">B1</div>
-    <div class="table b2" data-table="B2">B2</div>
-    <div class="table b3" data-table="B3">B3</div>
-    <div class="table b4" data-table="B4">B4</div>
+    <div class="table table-b b1" data-table="B1">B1</div>
+<div class="table table-b b2" data-table="B2">B2</div>
+<div class="table table-b b3" data-table="B3">B3</div>
+<div class="table table-b b4" data-table="B4">B4</div>
 
     <!-- องค์ประกอบเพิ่มเติม -->
     <div class="seat">seat</div>
