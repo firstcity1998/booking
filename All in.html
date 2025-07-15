@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ผังโต๊ะร้าน All In</title>
   <style>
     body {
@@ -18,13 +18,16 @@
     }
 
     .layout {
-      position: relative;
-      width: 900px;
-      height: 650px;
-      
-      border-radius: 16px;
-      
-    }
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+  aspect-ratio: 9 / 6.5; /* ให้คงสัดส่วน */
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.4);
+  transform: scale(1);
+}
+
 
     .stage {
       position: absolute;
