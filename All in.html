@@ -4,18 +4,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ผังโต๊ะร้าน All In</title>
   <style>
+    @media screen and (max-width: 768px) {
+  .layout {
+    transform: scale(0.8);
+    transform-origin: top center;
+  }
+}
     body {
-      margin: 0;
-      font-family: 'Arial', sans-serif;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow: hidden;
-      background: radial-gradient(circle at top left, #6a0dad, #2c003e);
-      background-repeat: no-repeat;
-      background-attachment: fixed;
-    }
+  margin: 0;
+  font-family: 'Arial', sans-serif;
+  background: radial-gradient(circle at top left, #6a0dad, #2c003e);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  overflow-x: auto; /* <== เปิดให้ scroll แนวนอนได้ */
+  overflow-y: auto;
+}
 
     .layout {
   position: relative;
@@ -25,7 +28,7 @@
   background: rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   box-shadow: 0 0 10px rgba(0,0,0,0.4);
-  transform: scale(1);
+  transition: transform 0.3s ease;
 }
 
 
