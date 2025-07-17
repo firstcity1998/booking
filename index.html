@@ -130,7 +130,8 @@
         });
     };
 
-    function bookSeats() {
+    // ฟังก์ชัน bookSeats ต้องอยู่ในสโคปนี้
+    window.bookSeats = function () {
       if (selected.size === 0) {
         alert("กรุณาเลือกที่นั่งก่อน");
         return;
@@ -195,7 +196,7 @@
           console.error("Send message error:", err);
           alert("❌ ส่งข้อความไม่สำเร็จ");
         });
-    }
+    };
   </script>
 
   <style>
