@@ -101,11 +101,15 @@
   try {
     await batch.commit();  // ทำการคอมมิต batch ไปยัง Firestore
     console.log(`${reservedSeats} seats reserved successfully!`);
+
+    // อัปเดตจำนวนที่นั่งในหน้าจอหลังจากการคอมมิตสำเร็จ
+    total.textContent = reservedSeats * pricePerSeat;  // คำนวณยอดรวมและแสดงในหน้าจอ
   } catch (error) {
     console.error("Error reserving seats:", error);  // ถ้ามีข้อผิดพลาด
     alert("❌ เกิดข้อผิดพลาดขณะจองที่นั่ง");
   }
 };
+
 
   </script>
 
