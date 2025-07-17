@@ -79,13 +79,17 @@
       });
     });
 
-    // ✅ บันทึกการจองเข้า Firestore
-    window.reserveSeats = async (userId) => {
+    window.bookSeats = async (userId) => {
+  if (selected.size === 0) {
+    alert("กรุณาเลือกที่นั่งก่อน");
+    return;  // ถ้ายังไม่ได้เลือกที่นั่ง
+  }
+
   const now = new Date();
-  const batch = writeBatch(db);  // สร้าง batch ใหม่
+  const batch = writeBatch(db);  // สร้าง batch ใหม่สำหรับการอัปเดตหลายๆ โต๊ะ
   let reservedSeats = 0;  // ตัวนับที่นั่งที่จองแล้ว
 
-  // อัปเดตหลายที่นั่ง
+  // อัปเดตหลายที่นั่งใน Firestore
   for (const id of selected) {
     const ref = doc(db, "restaurants", restaurantId, "tables", id);
     batch.update(ref, {
@@ -93,22 +97,16 @@
       reservedBy: userId,  // บันทึก userId ของผู้จอง
       timestamp: now       // บันทึกเวลา
     });
-
-    reservedSeats++;  // นับจำนวนที่นั่งที่จอง
+    reservedSeats++;  // เพิ่มตัวนับที่นั่งที่จอง
   }
 
-  // คอมมิตการอัปเดตทั้งหมด
   try {
-    await batch.commit();  // ทำการคอมมิต batch ไปยัง Firestore
+    // คอมมิตการอัปเดตทั้งหมด
+    await batch.commit();
     console.log(`${reservedSeats} seats reserved successfully!`);
 
-    // อัปเดตจำนวนที่นั่งในหน้าจอหลังจากการคอมมิตสำเร็จ
-    total.textContent = reservedSeats * pricePerSeat;  // คำนวณยอดรวมและแสดงในหน้าจอ
-  } catch (error) {
-    console.error("Error reserving seats:", error);  // ถ้ามีข้อผิดพลาด
-    alert("❌ เกิดข้อผิดพลาดขณะจองที่นั่ง");
-  }
-};
+    // อัปเดตยอดรวมที่แสดงในหน้าจอ
+    total.textContent = reservedSeats * pricePerSeat;
 
 
   </script>
@@ -197,72 +195,93 @@
     return;
   }
 
+const selected = new Set(); // ตัวแปรนี้จะเก็บที่นั่งที่ผู้ใช้เลือก
+
+allSeats.forEach(id => {
+  const seat = document.createElement("div");
+  seat.className = "seat";
+  seat.textContent = id;
+  seat.dataset.id = id;
+  seatMap.appendChild(seat);
+  seatElements[id] = seat;
+
+  // เพิ่มเหตุการณ์เมื่อคลิกที่นั่ง
+  seat.onclick = () => {
+    seat.classList.toggle("selected"); // เมื่อคลิกเลือกหรือยกเลิกการเลือกที่นั่ง
+    if (selected.has(id)) {
+      selected.delete(id);  // ถ้ามีที่นั่งใน selected ให้ลบออก
+    } else {
+      selected.add(id);  // ถ้าไม่มีให้เพิ่มที่นั่ง
+    }
+    total.textContent = selected.size * pricePerSeat; // คำนวณยอดรวม
+  };
+});
+
   console.log("Selected seats:", Array.from(selected));  // ตรวจสอบว่ามีที่นั่งที่เลือกไหม
 
   window.reserveSeats(window.userId)
     .then(() => {
       console.log("Booking successful!");  // ตรวจสอบว่าเรียกใช้ reserveSeats() แล้ว
       const flexMessage = {
-        type: "flex",
-        altText: "📌 ยืนยันการจองโต๊ะ",
-        contents: {
-          type: "bubble",
-          header: {
-            type: "box",
-            layout: "vertical",
-            contents: [{
+      type: "flex",
+      altText: "📌 ยืนยันการจองโต๊ะ",
+      contents: {
+        type: "bubble",
+        header: {
+          type: "box",
+          layout: "vertical",
+          contents: [{
+            type: "text",
+            text: "📌 ร้าน Vyse",
+            weight: "bold",
+            size: "lg",
+            color: "#f59e0b"
+          }]
+        },
+        body: {
+          type: "box",
+          layout: "vertical",
+          spacing: "sm",
+          contents: [
+            {
               type: "text",
-              text: "📌 ร้าน Vyse",
+              text: `คุณ ${window.displayName} ได้จองโต๊ะ`,
               weight: "bold",
-              size: "lg",
-              color: "#f59e0b"
-            }]
-          },
-          body: {
-            type: "box",
-            layout: "vertical",
-            spacing: "sm",
-            contents: [
-              {
-                type: "text",
-                text: `คุณ ${window.displayName} ได้จองโต๊ะ`,
-                weight: "bold",
-                size: "md"
-              },
-              {
-                type: "text",
-                text: `ที่นั่ง: ${Array.from(selected).join(", ")}`,
-                size: "sm",
-                wrap: true
-              },
-              {
-                type: "text",
-                text: `รวมทั้งหมด: ${selected.size * 50} บาท`,
-                size: "sm",
-                weight: "bold",
-                color: "#10b981"
-              }
-            ]
-          }
+              size: "md"
+            },
+            {
+              type: "text",
+              text: `ที่นั่ง: ${Array.from(selected).join(", ")}`,  // แสดงที่นั่งที่เลือก
+              size: "sm",
+              wrap: true
+            },
+            {
+              type: "text",
+              text: `รวมทั้งหมด: ${reservedSeats * pricePerSeat} บาท`,  // แสดงยอดรวม
+              size: "sm",
+              weight: "bold",
+              color: "#10b981"
+            }
+          ]
         }
-      };
+      }
+    };
 
-      liff.sendMessages([flexMessage])
-  .then(() => {
-    console.log("Message sent successfully");
-    alert("✅ ส่งข้อมูลจองเรียบร้อยแล้ว");
-    liff.closeWindow();
-  })
-  .catch(err => {
-    console.error("Send message error:", err);
-    alert("❌ ส่งข้อความไม่สำเร็จ");
-  });
-    })
-    .catch(err => {
-      console.error("❌ Reserve Firestore error:", err);
-      alert("❌ เกิดข้อผิดพลาดขณะจอง");
-    });
-}
+    // ส่ง Flex Message ไปยัง LINE
+    liff.sendMessages([flexMessage])
+      .then(() => {
+        alert("✅ ส่งข้อมูลจองเรียบร้อยแล้ว");
+        liff.closeWindow();  // ปิดหน้าต่าง LIFF
+      })
+      .catch(err => {
+        console.error("Send message error:", err);
+        alert("❌ ส่งข้อความไม่สำเร็จ");
+      });
+  } catch (error) {
+    console.error("Error committing batch:", error);  // ถ้ามีข้อผิดพลาด
+    alert("❌ เกิดข้อผิดพลาดขณะจองที่นั่ง");
+  }
+};
 
   </script>
 </body>
