@@ -1,12 +1,101 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>เลือกโต๊ะ</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script type="module">
+    // ✅ Import Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyByEiQP04T_RxQ88CMZRWxUMI_r9ra5ub4",
+      authDomain: "purdto-platform.firebaseapp.com",
+      projectId: "purdto-platform",
+      /*storageBucket: "ใส่ของคุณ",*/
+      messagingSenderId: "670687363597",
+      appId: "1:670687363597:web:dd96a5936c87ad27dd0b44"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const restaurantId = "vyse";
+    const seatMap = document.getElementById("seatMap");
+    const total = document.getElementById("total");
+    const pricePerSeat = 50;
+    const selected = new Set();
+    const seatElements = {};
+
+    const allSeats = [
+      "A1", "A2", "A3", "A4", "A5",
+      "B1", "B2", "B3", "B4", "B5",
+      "C1", "C2", "C3", "C4", "C5",
+      "D1", "D2", "D3", "D4", "D5",
+      "E1", "E2", "E3", "E4", "E5",
+      "F1", "F2", "F3", "F4", "F5"
+    ];
+
+    // 🔁 สร้างทุกที่นั่ง
+    allSeats.forEach(id => {
+      const seat = document.createElement("div");
+      seat.className = "seat";
+      seat.textContent = id;
+      seat.dataset.id = id;
+      seatMap.appendChild(seat);
+      seatElements[id] = seat;
+    });
+
+    // 👀 โหลดสถานะจาก Firestore แบบ real-time
+    const tablesRef = collection(db, "restaurants", restaurantId, "tables");
+    onSnapshot(tablesRef, snapshot => {
+      snapshot.docChanges().forEach(change => {
+        const id = change.doc.id;
+        const data = change.doc.data();
+        const seat = seatElements[id];
+        if (!seat) return;
+
+        seat.className = "seat";
+        if (data.status === "reserved") {
+          seat.classList.add("reserved");
+          seat.onclick = null;
+        } else if (data.status === "blocked") {
+          seat.classList.add("reserved");
+          seat.textContent = "❌";
+          seat.onclick = null;
+        } else {
+          seat.onclick = () => {
+            seat.classList.toggle("selected");
+            if (selected.has(id)) {
+              selected.delete(id);
+            } else {
+              selected.add(id);
+            }
+            total.textContent = selected.size * pricePerSeat;
+          };
+        }
+      });
+    });
+
+    // ✅ บันทึกการจองเข้า Firestore
+    window.reserveSeats = async (userId) => {
+      const now = new Date();
+      const batch = [];
+
+      for (const id of selected) {
+        const ref = doc(db, "restaurants", restaurantId, "tables", id);
+        await updateDoc(ref, {
+          status: "reserved",
+          reservedBy: userId,
+          timestamp: now
+        });
+      }
+    };
+  </script>
+
   <style>
-    /* เหมือนเดิมไม่เปลี่ยนจากที่คุณใช้ */
     .restaurant-name {
       font-size: 36px;
       font-weight: bold;
@@ -46,22 +135,12 @@
   <h1 class="restaurant-name">Vyse</h1>
 
   <div class="container">
-  <div style="display: flex; justify-content: flex-start;">
-    <button onclick="location.href='All in.html'" style="
-      background: #ffffff;
-      color: #000;
-      font-size: 14px;
-      padding: 6px 12px;
-      border: none;
-      border-radius: 6px;
-      width: auto;
-      min-width: 80px;
-      cursor: pointer;
-    ">
-      All In
-    </button>
+    <div style="display: flex; justify-content: flex-start;">
+      <button onclick="location.href='All in.html'" style="background: #fff; color: #000; font-size: 14px; padding: 6px 12px; border: none; border-radius: 6px; width: auto; min-width: 80px; cursor: pointer;">
+        All In
+      </button>
+    </div>
   </div>
-</div>
 
   <div class="container">
     <div class="stage">เวที</div>
@@ -75,129 +154,93 @@
     <button onclick="bookSeats()">จองเลย</button>
   </div>
 
-
-
-<script>
-  const seatMap = document.getElementById('seatMap');
-  const total = document.getElementById('total');
-  const pricePerSeat = 50;
-  const selected = new Set();
-  const reservedSeats = ["A3", "B4"];
-
-  const allSeats = [
-    "A1", "A2", "A3", "A4", "A5",
-    "B1", "B2", "B3", "B4", "B5",
-    "C1", "C2", "C3", "C4", "C5",
-    "D1", "D2", "D3", "D4", "D5",
-    "E1", "E2", "E3", "E4", "E5",
-    "F1", "F2", "F3", "F4", "F5"
-  ];
-
-  allSeats.forEach(id => {
-    const seat = document.createElement('div');
-    seat.className = 'seat';
-    seat.textContent = id;
-    seat.dataset.id = id;
-
-    if (reservedSeats.includes(id)) {
-      seat.classList.add('reserved');
-    } else {
-      seat.addEventListener('click', () => {
-        seat.classList.toggle('selected');
-        if (selected.has(id)) {
-          selected.delete(id);
-        } else {
-          selected.add(id);
-        }
-        total.textContent = selected.size * pricePerSeat;
-      });
-    }
-    seatMap.appendChild(seat);
-  });
-
-  // เริ่มต้น LIFF
-  window.onload = function () {
-    liff.init({ liffId: "2007619597-pL1yYoj3" }) // ← ใส่ LIFF ID จริงของคุณ
-      .then(() => {
-        if (!liff.isLoggedIn()) {
-          liff.login();
-        } else {
-          liff.getProfile().then(profile => {
-            window.userId = profile.userId;
-            window.displayName = profile.displayName;
-          });
-        }
-      })
-      .catch(err => {
-        console.error("LIFF Initialization failed", err);
-      });
-  };
-
- function bookSeats() {
-  if (selected.size === 0) {
-    alert("กรุณาเลือกที่นั่งก่อน");
-    return;
-  }
-
-  const flexMessage = { 
-    type: "flex",
-    altText: "📌 ยืนยันการจองโต๊ะ",
-    contents: {
-      type: "bubble",
-      header: {
-        type: "box",
-        layout: "vertical",
-        contents: [{
-          type: "text",
-          text: "📌 ร้าน Vyse",
-          weight: "bold",
-          size: "lg",
-          color: "#f59e0b"
-        }]
-      },
-      body: {
-        type: "box",
-        layout: "vertical",
-        spacing: "sm",
-        contents: [
-          {
-            type: "text",
-            text: `คุณ ${window.displayName} ได้จองโต๊ะ`,
-            weight: "bold",
-            size: "md"
-          },
-          {
-            type: "text",
-            text: `ที่นั่ง: ${Array.from(selected).join(", ")}`,
-            size: "sm",
-            wrap: true
-          },
-          {
-            type: "text",
-            text: `รวมทั้งหมด: ${selected.size * pricePerSeat} บาท`,
-            size: "sm",
-            weight: "bold",
-            color: "#10b981"
+  <script>
+    // ✅ LIFF init
+    window.onload = function () {
+      liff.init({ liffId: "2007619597-pL1yYoj3" }) // ใส่ LIFF ID จริง
+        .then(() => {
+          if (!liff.isLoggedIn()) {
+            liff.login();
+          } else {
+            liff.getProfile().then(profile => {
+              window.userId = profile.userId;
+              window.displayName = profile.displayName;
+            });
           }
-        ]
+        })
+        .catch(err => {
+          console.error("LIFF Initialization failed", err);
+        });
+    };
+
+    function bookSeats() {
+      if (selected.size === 0) {
+        alert("กรุณาเลือกที่นั่งก่อน");
+        return;
       }
+
+      window.reserveSeats(window.userId)
+        .then(() => {
+          const flexMessage = {
+            type: "flex",
+            altText: "📌 ยืนยันการจองโต๊ะ",
+            contents: {
+              type: "bubble",
+              header: {
+                type: "box",
+                layout: "vertical",
+                contents: [{
+                  type: "text",
+                  text: "📌 ร้าน Vyse",
+                  weight: "bold",
+                  size: "lg",
+                  color: "#f59e0b"
+                }]
+              },
+              body: {
+                type: "box",
+                layout: "vertical",
+                spacing: "sm",
+                contents: [
+                  {
+                    type: "text",
+                    text: `คุณ ${window.displayName} ได้จองโต๊ะ`,
+                    weight: "bold",
+                    size: "md"
+                  },
+                  {
+                    type: "text",
+                    text: `ที่นั่ง: ${Array.from(selected).join(", ")}`,
+                    size: "sm",
+                    wrap: true
+                  },
+                  {
+                    type: "text",
+                    text: `รวมทั้งหมด: ${selected.size * 50} บาท`,
+                    size: "sm",
+                    weight: "bold",
+                    color: "#10b981"
+                  }
+                ]
+              }
+            }
+          };
+
+          liff.sendMessages([flexMessage])
+            .then(() => {
+              alert("✅ ส่งข้อมูลจองเรียบร้อยแล้ว");
+              liff.closeWindow();
+            })
+            .catch(err => {
+              console.error("Send message error:", err);
+              alert("❌ ส่งข้อความไม่สำเร็จ");
+            });
+        })
+        .catch(err => {
+          console.error("❌ Reserve Firestore error:", err);
+          alert("❌ เกิดข้อผิดพลาดขณะจอง");
+        });
     }
-  };
-
-  liff.sendMessages([flexMessage])
-    .then(() => {
-      alert("✅ ส่งข้อมูลจองเรียบร้อยแล้ว");
-      liff.closeWindow();
-    })
-    .catch(err => {
-      console.error("Send message error:", err);
-      alert("❌ ส่งข้อมูลไม่สำเร็จ");
-    });
-}
-
- 
-</script>
-
-
+  </script>
 </body>
 </html>
