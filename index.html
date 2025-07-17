@@ -22,54 +22,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // เพิ่มข้อมูลโต๊ะทั้งหมดใน Firestore
-const tablesRef = collection(db, "restaurants", "vyse", "tables");
-
-const seats = [
-  { id: "A1", status: "available" },
-  { id: "A2", status: "available" },
-  { id: "A3", status: "available" },
-  { id: "A4", status: "available" },
-  { id: "A5", status: "available" },
-  { id: "B1", status: "available" },
-  { id: "B2", status: "available" },
-  { id: "B3", status: "available" },
-  { id: "B4", status: "available" },
-  { id: "B5", status: "available" },
-  { id: "C1", status: "available" },
-  { id: "C2", status: "available" },
-  { id: "C3", status: "available" },
-  { id: "C4", status: "available" },
-  { id: "C5", status: "available" },
-  { id: "D1", status: "available" },
-  { id: "D2", status: "available" },
-  { id: "D3", status: "available" },
-  { id: "D4", status: "available" },
-  { id: "D5", status: "available" },
-  { id: "E1", status: "available" },
-  { id: "E2", status: "available" },
-  { id: "E3", status: "available" },
-  { id: "E4", status: "available" },
-  { id: "E5", status: "available" },
-  { id: "F1", status: "available" },
-  { id: "F2", status: "available" },
-  { id: "F3", status: "available" },
-  { id: "F4", status: "available" },
-  { id: "F5", status: "available" }
-];
-
-// ใช้ `setDoc` เพิ่มข้อมูลโต๊ะใน Firestore
-seats.forEach(seat => {
-  const seatRef = doc(tablesRef, seat.id);  // ใช้ id โต๊ะเป็นชื่อเอกสาร
-  setDoc(seatRef, seat)  // เพิ่มข้อมูล
-    .then(() => {
-      console.log(`${seat.id} added to Firestore`);  // แสดงข้อมูลในคอนโซลว่าเพิ่มสำเร็จ
-    })
-    .catch((error) => {
-      console.error("Error adding document: ", error);  // หากมีข้อผิดพลาด
-    });
-});
-
     const restaurantId = "vyse";
     const seatMap = document.getElementById("seatMap");
     const total = document.getElementById("total");
