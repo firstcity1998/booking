@@ -82,30 +82,28 @@
     // ✅ บันทึกการจองเข้า Firestore
     window.reserveSeats = async (userId) => {
   const now = new Date();
-  
-  // ใช้ Batch เพื่ออัปเดตหลายเอกสารในครั้งเดียว
-  const batch = writeBatch(db); // สร้าง Batch ใหม่
-  let reservedSeats = 0;
+  const batch = writeBatch(db);  // สร้าง batch ใหม่
+  let reservedSeats = 0;  // ตัวนับที่นั่งที่จองแล้ว
 
+  // อัปเดตหลายที่นั่ง
   for (const id of selected) {
     const ref = doc(db, "restaurants", restaurantId, "tables", id);
-    
-    // เพิ่มการอัปเดตลงใน Batch
     batch.update(ref, {
-      status: "reserved",  // เปลี่ยนสถานะเป็น "reserved"
-      reservedBy: userId,  // เก็บข้อมูลผู้จอง
+      status: "reserved",  // เปลี่ยนสถานะโต๊ะเป็น "reserved"
+      reservedBy: userId,  // บันทึก userId ของผู้จอง
       timestamp: now       // บันทึกเวลา
     });
-    
-    reservedSeats++;
+
+    reservedSeats++;  // นับจำนวนที่นั่งที่จอง
   }
 
-  // ทำการ Commit การอัปเดตทั้งหมด
+  // คอมมิตการอัปเดตทั้งหมด
   try {
-    await batch.commit(); // ส่งคำสั่ง Batch ไปยัง Firestore
+    await batch.commit();  // ทำการคอมมิต batch ไปยัง Firestore
     console.log(`${reservedSeats} seats reserved successfully!`);
   } catch (error) {
-    console.error("Error reserving seats:", error);
+    console.error("Error reserving seats:", error);  // ถ้ามีข้อผิดพลาด
+    alert("❌ เกิดข้อผิดพลาดขณะจองที่นั่ง");
   }
 };
 
