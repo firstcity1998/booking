@@ -81,18 +81,34 @@
 
     // ✅ บันทึกการจองเข้า Firestore
     window.reserveSeats = async (userId) => {
-      const now = new Date();
-      const batch = [];
+  const now = new Date();
+  
+  // ใช้ Batch เพื่ออัปเดตหลายเอกสารในครั้งเดียว
+  const batch = writeBatch(db); // สร้าง Batch ใหม่
+  let reservedSeats = 0;
 
-      for (const id of selected) {
-        const ref = doc(db, "restaurants", restaurantId, "tables", id);
-        await updateDoc(ref, {
-          status: "reserved",
-          reservedBy: userId,
-          timestamp: now
-        });
-      }
-    };
+  for (const id of selected) {
+    const ref = doc(db, "restaurants", restaurantId, "tables", id);
+    
+    // เพิ่มการอัปเดตลงใน Batch
+    batch.update(ref, {
+      status: "reserved",  // เปลี่ยนสถานะเป็น "reserved"
+      reservedBy: userId,  // เก็บข้อมูลผู้จอง
+      timestamp: now       // บันทึกเวลา
+    });
+    
+    reservedSeats++;
+  }
+
+  // ทำการ Commit การอัปเดตทั้งหมด
+  try {
+    await batch.commit(); // ส่งคำสั่ง Batch ไปยัง Firestore
+    console.log(`${reservedSeats} seats reserved successfully!`);
+  } catch (error) {
+    console.error("Error reserving seats:", error);
+  }
+};
+
   </script>
 
   <style>
@@ -230,14 +246,15 @@
       };
 
       liff.sendMessages([flexMessage])
-        .then(() => {
-          alert("✅ ส่งข้อมูลจองเรียบร้อยแล้ว");
-          liff.closeWindow();
-        })
-        .catch(err => {
-          console.error("Send message error:", err);
-          alert("❌ ส่งข้อความไม่สำเร็จ");
-        });
+  .then(() => {
+    console.log("Message sent successfully");
+    alert("✅ ส่งข้อมูลจองเรียบร้อยแล้ว");
+    liff.closeWindow();
+  })
+  .catch(err => {
+    console.error("Send message error:", err);
+    alert("❌ ส่งข้อความไม่สำเร็จ");
+  });
     })
     .catch(err => {
       console.error("❌ Reserve Firestore error:", err);
