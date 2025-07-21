@@ -4,6 +4,199 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
   <title>ผังโต๊ะร้าน All In</title>
+
+  <!-- Firebase + Script หลัก -->
+<script type="module">
+  import { db } from './firebase-config.js';
+  import {
+    doc,
+    collection,
+    onSnapshot,
+    writeBatch
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const restaurantId = "all in";
+  const tablesRef = collection(db, "restaurants", restaurantId, "tables");
+  const selectedTables = new Set();
+  window.selectedTables = selectedTables;
+  const tableElements = {};
+
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".table").forEach(el => {
+      const id = el.dataset.table;
+      tableElements[id] = el;
+    });
+
+    onSnapshot(tablesRef, snapshot => {
+      snapshot.docChanges().forEach(change => {
+        const id = change.doc.id;
+        const data = change.doc.data();
+        const el = tableElements[id];
+        if (!el) return;
+
+        el.classList.remove("selected", "reserved");
+
+        if (data.status === "reserved") {
+      el.classList.add("reserved");
+      el.style.background = "#9ca3af";
+      el.style.pointerEvents = "none";
+      el.style.cursor = "default";
+      el.onclick = null;
+    } else if (data.status === "blocked") {
+      el.classList.add("reserved");
+      el.textContent = "❌";
+      el.style.pointerEvents = "none";
+      el.style.cursor = "default";
+      el.onclick = null;
+    } else {
+      el.style.background = "black";
+      el.style.pointerEvents = "auto";
+      el.style.cursor = "pointer";
+      el.onclick = () => {
+        el.classList.toggle("selected");
+        if (selectedTables.has(id)) {
+          selectedTables.delete(id);
+        } else {
+          selectedTables.add(id);
+        }
+        updateSummary();
+      };
+    }
+  });
+});
+
+    window.reserveTables = async (userId) => {
+      if (selectedTables.size === 0) {
+        alert("กรุณาเลือกโต๊ะก่อน");
+        return;
+      }
+
+      const batch = writeBatch(db);
+      const now = new Date();
+
+      selectedTables.forEach(id => {
+        const ref = doc(db, "restaurants", restaurantId, "tables", id);
+        batch.update(ref, {
+          status: "reserved",
+          reservedBy: userId,
+          timestamp: now
+        });
+      });
+
+      try {
+        await batch.commit();
+        return true;
+      } catch (err) {
+        console.error("Error reserving tables:", err);
+        alert("❌ เกิดข้อผิดพลาดขณะจองโต๊ะ");
+        return false;
+      }
+    };
+  });
+</script>
+
+<!-- LIFF SDK -->
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+<!-- LIFF + UI Interaction -->
+<script>
+  const pricePerTable = 50;
+  let displayName = "คุณ";
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    const summary = document.getElementById('summary');
+    const confirmBtn = document.getElementById('confirmBtn');
+    const tables = document.querySelectorAll('.table');
+
+    await liff.init({ liffId: "2007619597-pL1yYoj3" });
+    if (!liff.isLoggedIn()) {
+      liff.login();
+    } else {
+      const profile = await liff.getProfile();
+      displayName = profile.displayName || "คุณ";
+    }
+
+   
+
+    confirmBtn.addEventListener('click', async () => {
+      const tableList = Array.from(selectedTables).sort((a, b) => a.localeCompare(b));
+      const total = tableList.length * pricePerTable;
+
+      if (tableList.length === 0) {
+        alert("กรุณาเลือกโต๊ะก่อนจอง");
+        return;
+      }
+
+      const success = await window.reserveTables(liff.getDecodedIDToken().sub);
+      if (!success) return;
+
+      const flexMessage = {
+        type: "flex",
+        altText: "📌 ยืนยันการจองโต๊ะ",
+        contents: {
+          type: "bubble",
+          header: {
+            type: "box",
+            layout: "vertical",
+            contents: [{
+              type: "text",
+              text: "📌 ร้าน All In",
+              weight: "bold",
+              size: "lg",
+              color: "#a855f7"
+            }]
+          },
+          body: {
+            type: "box",
+            layout: "vertical",
+            spacing: "sm",
+            contents: [
+              {
+                type: "text",
+                text: `${displayName} ได้จองโต๊ะ`,
+                weight: "bold",
+                size: "md"
+              },
+              {
+                type: "text",
+                text: `โต๊ะ: ${tableList.join(', ')}`,
+                size: "sm",
+                wrap: true
+              },
+              {
+                type: "text",
+                text: `รวมทั้งหมด: ${total} บาท`,
+                size: "sm",
+                weight: "bold",
+                color: "#10b981"
+              }
+            ]
+          }
+        }
+      };
+
+      try {
+        await liff.sendMessages([flexMessage]);
+        alert("✅ ส่งข้อมูลจองเรียบร้อยแล้ว");
+        liff.closeWindow();
+      } catch (err) {
+        console.error("Send message error:", err);
+        alert("❌ ส่งข้อมูลไม่สำเร็จ");
+      }
+    });
+
+    window.updateSummary = () => {
+      if (selectedTables.size === 0) {
+        summary.textContent = 'ยังไม่ได้เลือกโต๊ะ';
+        return;
+      }
+      const tableList = Array.from(selectedTables).sort((a, b) => a.localeCompare(b));
+      const total = tableList.length * pricePerTable;
+      summary.textContent = `โต๊ะที่เลือก: ${tableList.join(', ')} | ราคารวม: ${total} บาท`;
+    };
+  });
+</script>
+
   <style>
     @media screen and (max-width: 768px) {
   .layout {
@@ -187,89 +380,7 @@
 </head>
 <body>
   <h1  class="restaurant-name">All In</h1>
-  <script type="module">
-  import { db } from './firebase-config.js';
-  import {
-    doc,
-    collection,
-    onSnapshot,
-    writeBatch
-  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-  const restaurantId = "all in"; // สำหรับร้าน All In
-  const tablesRef = collection(db, "restaurants", restaurantId, "tables");
-  const selectedTables = new Set();
-  const tableElements = {};
-
-  // เก็บ DOM ทุกโต๊ะ
-  document.querySelectorAll(".table").forEach(el => {
-    const id = el.dataset.table;
-    tableElements[id] = el;
-  });
-
-  // 🔁 โหลดสถานะโต๊ะแบบ real-time จาก Firestore
-  onSnapshot(tablesRef, snapshot => {
-    snapshot.docChanges().forEach(change => {
-      const id = change.doc.id;
-      const data = change.doc.data();
-      const el = tableElements[id];
-      if (!el) return;
-
-      el.classList.remove("selected", "reserved");
-
-      if (data.status === "reserved") {
-        el.classList.add("reserved");
-        el.style.background = "#9ca3af";
-        el.onclick = null;
-      } else if (data.status === "blocked") {
-        el.classList.add("reserved");
-        el.textContent = "❌";
-        el.onclick = null;
-      } else {
-        el.style.background = "black";
-        el.onclick = () => {
-          el.classList.toggle("selected");
-          if (selectedTables.has(id)) {
-            selectedTables.delete(id);
-          } else {
-            selectedTables.add(id);
-          }
-          updateSummary();
-        };
-      }
-    });
-  });
-
-  // 📦 ฟังก์ชันจองโต๊ะแบบ batch
-  window.reserveTables = async (userId) => {
-    if (selectedTables.size === 0) {
-      alert("กรุณาเลือกโต๊ะก่อน");
-      return;
-    }
-
-    const batch = writeBatch(db);
-    const now = new Date();
-
-    selectedTables.forEach(id => {
-      const ref = doc(db, "restaurants", restaurantId, "tables", id);
-      batch.update(ref, {
-        status: "reserved",
-        reservedBy: userId,
-        timestamp: now
-      });
-    });
-
-    try {
-      await batch.commit();
-      return true;
-    } catch (err) {
-      console.error("Error reserving tables:", err);
-      alert("❌ เกิดข้อผิดพลาดขณะจองโต๊ะ");
-      return false;
-    }
-  };
-</script>
-
+  
 
   <div class="layout">
     <div class="stage">STAGE</div>
@@ -321,123 +432,6 @@
    จองโต๊ะ
 </button>
 </div>
-
-
-<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-<script>
-  const pricePerTable = 50;
-  const summary = document.getElementById('summary');
-  const tables = document.querySelectorAll('.table');
-  const confirmBtn = document.getElementById('confirmBtn');
-  let displayName = "คุณ";
-
-  async function initLiff() {
-    await liff.init({ liffId: "2007619597-pL1yYoj3" }); // ← ใส่ LIFF ID จริงของคุณ
-    if (!liff.isLoggedIn()) {
-      liff.login();
-    } else {
-      const profile = await liff.getProfile();
-      displayName = profile.displayName || "คุณ";
-    }
-  }
-
-  initLiff();
-
-  tables.forEach(table => {
-    const tableId = table.getAttribute('data-table');
-    if (tableId && tableId !== 'STAGE') {
-      table.addEventListener('click', () => {
-        if (selectedTables.has(tableId)) {
-          selectedTables.delete(tableId);
-          table.classList.remove('selected');
-        } else {
-          selectedTables.add(tableId);
-          table.classList.add('selected');
-        }
-        updateSummary();
-      });
-    }
-  });
-
-  function updateSummary() {
-    if (selectedTables.size === 0) {
-      summary.textContent = 'ยังไม่ได้เลือกโต๊ะ';
-      return;
-    }
-
-    const tableList = Array.from(selectedTables).sort((a, b) => a.localeCompare(b));
-    const total = tableList.length * pricePerTable;
-    summary.textContent = `โต๊ะที่เลือก: ${tableList.join(', ')} | ราคารวม: ${total} บาท`;
-  }
-
-  confirmBtn.addEventListener('click', async () => {
-  const tableList = Array.from(selectedTables).sort((a, b) => a.localeCompare(b));
-  const total = tableList.length * pricePerTable;
-
-  if (tableList.length === 0) {
-    alert("กรุณาเลือกโต๊ะก่อนจอง");
-    return;
-  }
-
-  const success = await window.reserveTables(liff.getDecodedIDToken().sub); // ใช้ userId จริง
-  if (!success) return;
-
-  const flexMessage = {
-    type: "flex",
-    altText: "📌 ยืนยันการจองโต๊ะ",
-    contents: {
-      type: "bubble",
-      header: {
-        type: "box",
-        layout: "vertical",
-        contents: [{
-          type: "text",
-          text: "📌 ร้าน All In",
-          weight: "bold",
-          size: "lg",
-          color: "#a855f7"
-        }]
-      },
-      body: {
-        type: "box",
-        layout: "vertical",
-        spacing: "sm",
-        contents: [
-          {
-            type: "text",
-            text: `${displayName} ได้จองโต๊ะ`,
-            weight: "bold",
-            size: "md"
-          },
-          {
-            type: "text",
-            text: `โต๊ะ: ${tableList.join(', ')}`,
-            size: "sm",
-            wrap: true
-          },
-          {
-            type: "text",
-            text: `รวมทั้งหมด: ${total} บาท`,
-            size: "sm",
-            weight: "bold",
-            color: "#10b981"
-          }
-        ]
-      }
-    }
-  };
-
-  try {
-    await liff.sendMessages([flexMessage]);
-    alert("✅ ส่งข้อมูลจองเรียบร้อยแล้ว");
-    liff.closeWindow();
-  } catch (err) {
-    console.error("Send message error:", err);
-    alert("❌ ส่งข้อมูลไม่สำเร็จ");
-  }
-});
-</script>
-
 
 </body>
 </html>   
