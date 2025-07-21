@@ -7,13 +7,22 @@
 
   <!-- Firebase + Script หลัก -->
 <script type="module">
-  import { db } from './firebase-config.js';
-  import {
-    doc,
-    collection,
-    onSnapshot,
-    writeBatch
-  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyByEiQP04T_RxQ88CMZRWxUMI_r9ra5ub4",
+  authDomain: "purdto-platform.firebaseapp.com",
+  projectId: "purdto-platform",
+  messagingSenderId: "670687363597",
+  appId: "1:670687363597:web:dd96a5936c87ad27dd0b44"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+export { db };
+
 
   const restaurantId = "all in";
   const tablesRef = collection(db, "restaurants", restaurantId, "tables");
@@ -414,24 +423,27 @@
   </div>
 
   <div id="summary">ยังไม่ได้เลือกโต๊ะ</div>
+
 <div style="text-align: center; margin: 20px;">
-  <button id="confirmBtn" style="
-  position: fixed;
-  bottom: 50px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: rgb(253, 187, 7);
-  color: white;
-  padding: 12px 24px;
-  font-size: 18px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  z-index: 999;
-">
-   จองโต๊ะ
-</button>
+  <button id="confirmBtn" onclick="bookSeats()" style="
+    position: fixed;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgb(253, 187, 7);
+    color: white;
+    padding: 12px 24px;
+    font-size: 18px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    z-index: 999;
+  ">
+    จองเลย
+  </button>
 </div>
+
+
 
 </body>
 </html>   
