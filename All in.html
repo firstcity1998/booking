@@ -20,7 +20,7 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  const restaurantId = "all in";
+  const restaurantId = "allin";
   const pricePerSeat = 50;
   const selected = new Set();
   const seatElements = {};
@@ -37,6 +37,7 @@
 
     onSnapshot(tablesRef, snapshot => {
       snapshot.docChanges().forEach(change => {
+        console.log("📡 Firestore snapshot loaded:", snapshot.docs.length); // เพิ่มบรรทัดนี้
         const id = change.doc.id;
         const data = change.doc.data();
         const seat = seatElements[id];
