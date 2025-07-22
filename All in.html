@@ -54,19 +54,34 @@ if (data.status === "reserved") {
   seat.onclick = null;
 } else {
   seat.onclick = () => {
-    seat.classList.toggle("selected");
-    if (selected.has(id)) {
-      selected.delete(id);
-    } else {
-      selected.add(id);
-    }
-    document.getElementById("total").textContent = selected.size * pricePerSeat;
-  };
+  seat.classList.toggle("selected");
+  if (selected.has(id)) {
+    selected.delete(id);
+  } else {
+    selected.add(id);
+  }
+  updateButtonTotal();  // ✅ เพิ่มตรงนี้แทน document.getElementById("total") ที่ใช้ไม่ได้
+};
 }
 
       });
     });
   });
+function updateButtonTotal() {
+  const total = selected.size * pricePerSeat;
+  const btn = document.getElementById("confirmBtn");
+  btn.textContent = `จองเลย (${total} บาท)`;
+  btn.disabled = selected.size === 0;
+
+  // เพิ่ม style ตอน disabled (ถ้าต้องการ)
+  if (btn.disabled) {
+    btn.style.backgroundColor = "#9ca3af";
+    btn.style.cursor = "not-allowed";
+  } else {
+    btn.style.backgroundColor = "#10b981";
+    btn.style.cursor = "pointer";
+  }
+}
 
     window.reserveSeats = async (userId) => {
       if (selected.size === 0) {
