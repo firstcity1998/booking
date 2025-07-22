@@ -105,16 +105,14 @@ function updateButtonTotal() {
       }
 
       try {
-        // คอมมิตการอัปเดตทั้งหมด
-        await batch.commit();
-        console.log(`${reservedSeats} seats reserved successfully!`);
+  await batch.commit();
+  console.log(`${reservedSeats} seats reserved successfully!`);
 
-        // อัปเดตยอดรวมที่แสดงในหน้าจอ
-        total.textContent = reservedSeats * pricePerSeat;
-      } catch (error) {
+  updateButtonTotal(); // ✅ ใช้ฟังก์ชันนี้แทน total.textContent
+}
+ catch (error) {
         console.error("Error committing batch:", error);  // ถ้ามีข้อผิดพลาด
        alert("❌ เกิดข้อผิดพลาดขณะจองที่นั่ง");
-       throw error;
       }
     };
 
@@ -146,7 +144,6 @@ function updateButtonTotal() {
       window.reserveSeats(window.userId)
         .then(() => {
           console.log("Booking successful!");  // ตรวจสอบว่าเรียกใช้ reserveSeats() แล้ว
-          
           const flexMessage = {
   type: "flex",
   altText: "📌 ยืนยันการจองโต๊ะ",
@@ -177,26 +174,26 @@ function updateButtonTotal() {
       spacing: "sm",
       contents: [
         {
-          type: "text",
-          text: `คุณ ${window.displayName} ได้จองโต๊ะ`,
-          weight: "bold",
-          size: "md",
-          color: "#ffffff"
-        },
-        {
-          type: "text",
-          text: `ที่นั่ง: ${Array.from(selected).join(", ")}`,
-          size: "sm",
-          wrap: true,
-          color: "#d4d4d4"
-        },
-        {
-          type: "text",
-          text: `รวมทั้งหมด: ${selected.size * pricePerSeat} บาท`,
-          size: "sm",
-          weight: "bold",
-          color: "#10b981"
-        }
+  type: "text",
+  text: `คุณ ${window.displayName} ได้จองโต๊ะ`,
+  weight: "bold",
+  size: "md",
+  color: "#ffffff"
+},
+{
+  type: "text",
+  text: `ที่นั่ง: ${Array.from(selected).join(", ")}`,
+  size: "sm",
+  wrap: true,
+  color: "#d4d4d4"
+},
+{
+  type: "text",
+  text: `รวมทั้งหมด: ${selected.size * pricePerSeat} บาท`,
+  size: "sm",
+  weight: "bold",
+  color: "#10b981"
+}
       ]
     }
   }
@@ -204,17 +201,17 @@ function updateButtonTotal() {
 
 
           // ส่ง Flex Message ไปยัง LINE
-         return liff.sendMessages([flexMessage]);
-    })
-    .then(() => {
-      alert("✅ ส่งข้อมูลจองเรียบร้อยแล้ว");
-      liff.closeWindow();  // ปิดหน้าต่าง LIFF
-    })
-    .catch(err => {
-      console.error("Send message error:", err);
-      alert("❌ ส่งข้อความไม่สำเร็จ");
-    });
-};
+          liff.sendMessages([flexMessage]);
+        })
+        .then(() => {
+          alert("✅ ส่งข้อมูลจองเรียบร้อยแล้ว");
+          liff.closeWindow();  // ปิดหน้าต่าง LIFF
+        })
+        .catch(err => {
+          console.error("Send message error:", err);
+          alert("❌ ส่งข้อความไม่สำเร็จ");
+        });
+    };
   </script>
 
   <style>
@@ -468,4 +465,4 @@ function updateButtonTotal() {
 
 
 </body>
-</html>   
+</html>
