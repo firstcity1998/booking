@@ -43,25 +43,27 @@
         const seat = seatElements[id];
         if (!seat) return;
 
-        seat.className = "table";
-        if (data.status === "reserved") {
-          seat.classList.add("reserved");
-          seat.onclick = null;
-        } else if (data.status === "blocked") {
-          seat.classList.add("reserved");
-          seat.textContent = "❌";
-          seat.onclick = null;
-        } else {
-          seat.onclick = () => {
-            seat.classList.toggle("selected");
-            if (selected.has(id)) {
-              selected.delete(id);
-            } else {
-              selected.add(id);
-            }
-            document.getElementById("total").textContent = selected.size * pricePerSeat;
-          };
-        }
+seat.classList.remove("selected", "reserved");
+
+if (data.status === "reserved") {
+  seat.classList.add("reserved");
+  seat.onclick = null;
+} else if (data.status === "blocked") {
+  seat.classList.add("reserved");
+  seat.textContent = "❌";
+  seat.onclick = null;
+} else {
+  seat.onclick = () => {
+    seat.classList.toggle("selected");
+    if (selected.has(id)) {
+      selected.delete(id);
+    } else {
+      selected.add(id);
+    }
+    document.getElementById("total").textContent = selected.size * pricePerSeat;
+  };
+}
+
       });
     });
   });
