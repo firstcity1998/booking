@@ -96,11 +96,14 @@ function updateButtonTotal() {
       // อัปเดตหลายที่นั่งใน Firestore
       for (const id of selected) {
         const ref = doc(db, "restaurants", restaurantId, "tables", id);
-        batch.update(ref, {
-          status: "reserved",  // เปลี่ยนสถานะโต๊ะเป็น "reserved"
-          reservedBy: userId,  // บันทึก userId ของผู้จอง
-          timestamp: now       // บันทึกเวลา
-        });
+      batch.update(ref, { 
+  status: "reserved",     // เปลี่ยนสถานะโต๊ะเป็น "reserved"
+  reservedBy: {           // เก็บข้อมูลผู้จอง
+    displayName: window.displayName,  // 👤 ชื่อจาก LINE
+    userId: window.userId             // 🆔 userId จาก LINE
+  },
+  timestamp: now          // ⏰ เวลาที่จอง
+});
         reservedSeats++;  // เพิ่มตัวนับที่นั่งที่จอง
       }
 
