@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ผังโต๊ะร้าน Fuel</title>
+
+  <!-- LIFF SDK -->
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, doc, writeBatch, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyByEiQP04T_RxQ88CMZRWxUMI_r9ra5ub4",
+      authDomain: "purdto-platform.firebaseapp.com",
+      projectId: "purdto-platform",
+      messagingSenderId: "670687363597",
+      appId: "1:670687363597:web:dd96a5936c87ad27dd0b44"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const restaurantId = "fuel";  // 🔥 เปลี่ยนชื่อร้าน
+    const pricePerSeat = 50;
+    const selected = new Set();
+    const seatElements = {};
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelectorAll(".table").forEach(el => {
+        const id = el.dataset.table;
+        seatElements[id] = el;
+      });
+
+      const tablesRef = collection(db, "restaurants", restaurantId, "tables");
+      onSnapshot(tablesRef, snapshot => {
+        snapshot.docChanges().forEach(change => {
+          const id = change.doc.id;
+          const data = change.doc.data();
+          const seat = seatElements[id];
+          if (!seat) return;
+
+          seat.classList.remove("selected", "reserved");
+
+          if (data.status === "reserved" || data.status === "blocked") {
+            seat.classList.add("reserved");
+            seat.textContent = data.status === "blocked" ? "❌" : id;
+            seat.onclick = null;
+          } else {
+            seat.textContent = id;
+            seat.onclick = () => {
+              seat.classList.toggle("selected");
+              if (selected.has(id)) selected.delete(id);
+              else selected.add(id);
+              updateButtonTotal();
+            };
+          }
+        });
+      });
+    });
+
+    function updateButtonTotal() {
+      const total = selected.size * pricePerSeat;
+      const btn = document.getElementById("confirmBtn");
+      btn.textContent = `จองเลย (${total} บาท)`;
+      btn.disabled = selected.size === 0;
+      btn.style.backgroundColor = btn.disabled ? "#9ca3af" : "#10b981";
+      btn.style.cursor = btn.disabled ? "not-allowed" : "pointer";
+    }
+
+    window.reserveSeats = async (userId) => {
+      if (selected.size === 0) return;
+      const now = new Date();
+      const batch = writeBatch(db);
+
+      for (const id of selected) {
+        const ref = doc(db, "restaurants", restaurantId, "tables", id);
+        batch.update(ref, {
+          status: "reserved",
+          reservedBy: { displayName: window.displayName, userId: window.userId },
+          timestamp: now
+        });
+      }
+
+      try {
+        await batch.commit();
+        updateButtonTotal();
+      } catch (err) {
+        alert("❌ เกิดข้อผิดพลาดขณะจองที่นั่ง");
+        console.error(err);
+      }
+    };
+
+    window.onload = function () {
+      liff.init({ liffId: "2007619597-pL1yYoj3" })
+        .then(() => {
+          if (!liff.isLoggedIn()) liff.login();
+          else {
+            liff.getProfile().then(profile => {
+              window.userId = profile.userId;
+              window.displayName = profile.displayName;
+            });
+          }
+        }).catch(console.error);
+    };
+
+    window.bookSeats = function () {
+      if (selected.size === 0) {
+        alert("กรุณาเลือกที่นั่งก่อน");
+        return;
+      }
+
+      window.reserveSeats(window.userId).then(() => {
+        const flexMessage = {
+          type: "flex",
+          altText: "📌 ยืนยันการจองโต๊ะ",
+          contents: {
+            type: "bubble",
+            styles: {
+              header: { backgroundColor: "#000000" },
+              body: { backgroundColor: "#111111" }
+            },
+            header: {
+              type: "box",
+              layout: "vertical",
+              contents: [{ type: "text", text: "📌 ร้าน Fuel", weight: "bold", size: "lg", color: "#facc15" }]
+            },
+            body: {
+              type: "box",
+              layout: "vertical",
+              spacing: "sm",
+              contents: [
+                { type: "text", text: `คุณ ${window.displayName} ได้จองโต๊ะ`, weight: "bold", size: "md", color: "#ffffff" },
+                { type: "text", text: `ที่นั่ง: ${Array.from(selected).join(", ")}`, size: "sm", wrap: true, color: "#d4d4d4" },
+                { type: "text", text: `รวมทั้งหมด: ${selected.size * pricePerSeat} บาท`, size: "sm", weight: "bold", color: "#10b981" }
+              ]
+            }
+          }
+        };
+
+        liff.sendMessages([flexMessage])
+          .then(() => {
+            alert("✅ ส่งข้อมูลจองเรียบร้อยแล้ว");
+            liff.closeWindow();
+          })
+          .catch(err => {
+            alert("❌ ส่งข้อความไม่สำเร็จ");
+            console.error(err);
+          });
+      });
+    };
+  </script>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial', sans-serif;
+      background-color: #4d4d4d;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .layout {
+      width: 900px;
+      height: 680px;
+      position: relative;
+    }
+    .stage {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 370px;
+      height: 180px;
+      background: #ff5c5c;
+      border-bottom-left-radius: 185px;
+      border-bottom-right-radius: 185px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      font-size: 48px;
+      font-weight: bold;
+      color: rgb(3, 3, 3);
+      padding-bottom: 20px;
+    }
+    .door {
+      position: absolute;
+      width: 40px;
+      height: 60px;
+      border: 2px solid white;
+    }
+    .door::after {
+      content: '0';
+      color: white;
+      position: absolute;
+      font-size: 16px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .door-top { top: 40px; right: 40px; }
+    .door-bottom { bottom: 10px; right: 10px; }
+
+    .table {
+      position: absolute;
+      width: 70px;
+      height: 70px;
+      background: rgb(7, 7, 7);
+      color: rgb(255, 255, 255);
+      font-weight: bold;
+      font-size: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .table.reserved {
+      background: #9ca3af;
+      pointer-events: none;
+    }
+    .table.selected {
+      background: #10b981;
+      color: white;
+    }
+
+    /* ตำแหน่งโต๊ะตามภาพ */
+    .t1 { top: 80px; left: 680px; }
+    .t2 { top: 80px; left: 560px; }
+    .t3 { top: 80px; left: 440px; }
+    .t4 { top: 160px; left: 580px; }
+    .t5 { top: 160px; left: 300px; }
+    .t6 { top: 240px; left: 580px; }
+    .t7 { top: 240px; left: 400px; }
+    .t8 { top: 240px; left: 300px; }
+    .t9 { top: 320px; left: 620px; border-radius: 50%; }
+    .t10 { top: 320px; left: 200px; border-radius: 50%; }
+    .t11 { top: 400px; left: 580px; }
+    .t12 { top: 400px; left: 200px; }
+    .t13 { top: 480px; left: 580px; }
+    .t14 { top: 480px; left: 200px; }
+
+    #confirmBtnContainer {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background: #ffffffee;
+      text-align: center;
+      padding: 12px;
+      z-index: 10;
+    }
+
+    #confirmBtn {
+      padding: 10px 24px;
+      font-size: 16px;
+      background-color: #10b981;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #confirmBtn:hover {
+      background-color: #059669;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <div class="stage">STAGE</div>
+    <div class="door door-top"></div>
+    <div class="door door-bottom"></div>
+
+    <!-- โต๊ะ -->
+    <div class="table t1" data-table="1">1</div>
+    <div class="table t2" data-table="2">2</div>
+    <div class="table t3" data-table="3">3</div>
+    <div class="table t4" data-table="4">4</div>
+    <div class="table t5" data-table="5">5</div>
+    <div class="table t6" data-table="6">6</div>
+    <div class="table t7" data-table="7">7</div>
+    <div class="table t8" data-table="8">8</div>
+    <div class="table t9" data-table="9">9</div>
+    <div class="table t10" data-table="10">10</div>
+    <div class="table t11" data-table="11">11</div>
+    <div class="table t12" data-table="12">12</div>
+    <div class="table t13" data-table="13">13</div>
+    <div class="table t14" data-table="14">14</div>
+  </div>
+
+  <div id="confirmBtnContainer">
+    <button id="confirmBtn" onclick="bookSeats()">จองเลย (0 บาท)</button>
+  </div>
+</body>
+</html>
