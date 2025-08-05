@@ -30,9 +30,10 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       document.querySelectorAll(".table").forEach(el => {
-        const id = el.dataset.table;
-        seatElements[id] = el;
-      });
+  const id = el.dataset.table;
+  seatElements[id] = el;
+});
+
 
       const tablesRef = collection(db, "restaurants", restaurantId, "tables");
       onSnapshot(tablesRef, snapshot => {
@@ -154,71 +155,128 @@
   </script>
 
   <style>
-    body {
+     body {
       margin: 0;
-      padding: 0;
-      font-family: 'Arial', sans-serif;
-      background-color: #4d4d4d;
-      height: 100vh;
+      font-family: 'Prompt', sans-serif;
+      background: linear-gradient(to right, #000, #2e1a94);
+      color: white;
       overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
     }
-    .layout {
-      width: 900px;
-      height: 680px;
+
+    .container {
       position: relative;
+      width: 100vw;
+      height: 100vh;
+      max-width: 430px;
+      margin: 0 auto;
+      background-color: #4d4d4d
     }
+
     .stage {
       position: absolute;
       top: 0;
       left: 0;
-      width: 370px;
-      height: 180px;
-      background: #ff5c5c;
-      border-bottom-left-radius: 185px;
-      border-bottom-right-radius: 185px;
+      width: 60%;
+      height: 110px;
+      background: #f31e4c;
+      border-bottom-left-radius: 200px;
+      border-bottom-right-radius: 200px;
       display: flex;
       justify-content: center;
       align-items: flex-end;
-      font-size: 48px;
+      padding-bottom: 12px;
+      font-size: 28px;
       font-weight: bold;
-      color: rgb(3, 3, 3);
-      padding-bottom: 20px;
+      color: rgb(253, 249, 4);
     }
-    .door {
-      position: absolute;
-      width: 40px;
-      height: 60px;
-      border: 2px solid white;
-    }
-    .door::after {
-      content: '0';
-      color: white;
-      position: absolute;
-      font-size: 16px;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-    }
-    .door-top { top: 40px; right: 40px; }
-    .door-bottom { bottom: 10px; right: 10px; }
 
     .table {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  background-color: #9c27b0;
+  color: white;
+  border-radius: 8px;
+  text-align: center;
+  line-height: 60px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.table.circle {
+  border-radius: 50%;
+}
+
+.table.selected {
+  background: #10b981;
+  color: white;
+}
+
+.table.reserved {
+  background: #9ca3af;
+  pointer-events: none;
+}
+
+   .door {
       position: absolute;
-      width: 70px;
-      height: 70px;
-      background: rgb(7, 7, 7);
-      color: rgb(255, 255, 255);
-      font-weight: bold;
-      font-size: 20px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      cursor: pointer;
-      transition: 0.2s;
+      width: 25px;
+      height: 50px;
+      border: 2px solid rgb(252, 248, 248);
     }
+
+    .door::after {
+      content: '';
+      position: absolute;
+      width: 5px;
+      height: 5px;
+      background: rgb(255, 255, 255);
+      border-radius: 50%;
+      top: 50%;
+      left: 5px;
+      transform: translateY(-50%);
+    }
+
+    .door-top-right { top: 10px; left: 380px; }
+    .door-bottom-left { top: 600px; left: 380px; }
+
+    #totalBox {
+      position: absolute;
+      bottom: 80px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 18px;
+    }
+
+    button {
+      position: absolute;
+      bottom: 20px;
+      left: 5%;
+      width: 90%;
+      padding: 12px;
+      background: #f59e0b;
+      color: black;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+   .floor-plan {
+  position: relative;
+  width: 100%;
+  height: 600px; /* หรือปรับตามขนาดภาพ */
+}
+
+.table {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  background-color: #0c0c0c;
+  color: white;
+  border-radius: 8px;
+  text-align: center;
+  line-height: 60px;
+  font-weight: bold;
+}
     .table.reserved {
       background: #9ca3af;
       pointer-events: none;
@@ -227,22 +285,25 @@
       background: #10b981;
       color: white;
     }
+    .bar {
+  position: absolute;
+  top: 110px;
+  right: 0;
+  width: 90px;
+  height: 470px; /* ปรับความสูงตามแผนผัง */
+  background-color: black;
+  color: white;
+  writing-mode: vertical-rl;
+  text-align: center;
+  font-weight: bold;
+  font-size: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-left: 2px solid #000000; /* เส้นขอบม่วงเข้ม */
+  z-index: 2;
+}
 
-    /* ตำแหน่งโต๊ะตามภาพ */
-    .t1 { top: 80px; left: 680px; }
-    .t2 { top: 80px; left: 560px; }
-    .t3 { top: 80px; left: 440px; }
-    .t4 { top: 160px; left: 580px; }
-    .t5 { top: 160px; left: 300px; }
-    .t6 { top: 240px; left: 580px; }
-    .t7 { top: 240px; left: 400px; }
-    .t8 { top: 240px; left: 300px; }
-    .t9 { top: 320px; left: 620px; border-radius: 50%; }
-    .t10 { top: 320px; left: 200px; border-radius: 50%; }
-    .t11 { top: 400px; left: 580px; }
-    .t12 { top: 400px; left: 200px; }
-    .t13 { top: 480px; left: 580px; }
-    .t14 { top: 480px; left: 200px; }
 
     #confirmBtnContainer {
       position: fixed;
@@ -270,27 +331,33 @@
   </style>
 </head>
 <body>
-  <div class="layout">
+  <div class="container">
     <div class="stage">STAGE</div>
-    <div class="door door-top"></div>
-    <div class="door door-bottom"></div>
 
-    <!-- โต๊ะ -->
-    <div class="table t1" data-table="1">1</div>
-    <div class="table t2" data-table="2">2</div>
-    <div class="table t3" data-table="3">3</div>
-    <div class="table t4" data-table="4">4</div>
-    <div class="table t5" data-table="5">5</div>
-    <div class="table t6" data-table="6">6</div>
-    <div class="table t7" data-table="7">7</div>
-    <div class="table t8" data-table="8">8</div>
-    <div class="table t9" data-table="9">9</div>
-    <div class="table t10" data-table="10">10</div>
-    <div class="table t11" data-table="11">11</div>
-    <div class="table t12" data-table="12">12</div>
-    <div class="table t13" data-table="13">13</div>
-    <div class="table t14" data-table="14">14</div>
-  </div>
+    <!-- โต๊ะเรียงตามภาพ -->
+    <div class="table" data-table="1" style="top: 130px; left: 280px;">1</div>
+    <div class="table" data-table="2" style="top: 130px; left: 160px;">2</div>
+    <div class="table" data-table="3" style="top: 130px; left: 60px;">3</div>
+
+    <div class="table" data-table="4" style="top: 200px; left: 260px;">4</div>
+    <div class="table" data-table="5" style="top: 200px; left: 60px;">5</div>
+
+    <div class="table" data-table="6" style="top: 270px; left: 260px;">6</div>
+    <div class="table" data-table="7" style="top: 270px; left: 160px;">7</div>
+    <div class="table" data-table="8" style="top: 270px; left: 60px;">8</div>
+
+    <div class="table circle" data-table="9" style="top: 350px; left: 260px;">9</div>
+    <div class="table circle" data-table="10" style="top: 350px; left: 60px;">10</div>
+
+    <div class="table" data-table="11" style="top: 440px; left: 260px;">11</div>
+    <div class="table" data-table="12" style="top: 440px; left: 60px;">12</div>
+
+    <div class="table" data-table="13" style="top: 510px; left: 260px;">13</div>
+    <div class="table" data-table="14" style="top: 510px; left: 60px;">14</div>
+
+<div class="bar"></div>
+<div class="door door-top-right"></div>
+    <div class="door door-bottom-left"></div>
 
   <div id="confirmBtnContainer">
     <button id="confirmBtn" onclick="bookSeats()">จองเลย (0 บาท)</button>
