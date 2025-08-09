@@ -1,118 +1,284 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>เลือกโต๊ะ</title>
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <script type="module">
-    // ✅ Import Firebase
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, doc, updateDoc, writeBatch, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>BAR Template</title>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyByEiQP04T_RxQ88CMZRWxUMI_r9ra5ub4",
-      authDomain: "purdto-platform.firebaseapp.com",
-      projectId: "purdto-platform",
-      messagingSenderId: "670687363597",
-      appId: "1:670687363597:web:dd96a5936c87ad27dd0b44"
-    };
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+  :root{
+    --page-bg: #0b0b10;
+    --card-bg: #141318;
+    --muted: #bfbfc3;
+    --accent: #f15a29;
+    --white: #fff;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:"Open Sans",system-ui,Arial;background:var(--page-bg);color:var(--white);-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  /* Navbar */
+  nav{
+    position:fixed;left:0;right:0;top:0;height:68px;display:flex;align-items:center;justify-content:space-between;padding:18px 36px;z-index:60;
+    transition:background .25s ease,backdrop-filter .25s ease;
+  }
+  nav .logo{font-family:"Oswald";letter-spacing:2px;font-weight:600}
+  nav .menu{display:flex;gap:18px;align-items:center}
+  nav .menu a{font-weight:600;font-size:0.92rem;color:rgba(255,255,255,0.95)}
+  nav.scrolled{background:rgba(0,0,0,0.5);backdrop-filter:blur(6px)}
+  /* HERO */
+  header.hero{
+    min-height:100vh; display:flex; align-items:center; justify-content:center; position:relative; padding-top:68px;
+    overflow:hidden;
+  }
+  /* background split images: left and right */
+  .hero-bg{
+    position:absolute;inset:0;display:flex;gap:0;z-index:0;
+  }
+  .hero-bg .col{flex:1;background-position:center;background-size:cover}
+  .hero-bg .left{background-image: url('https://cdn.pixabay.com/photo/2015/01/16/08/32/whisky-601215_1280.jpg');}
+  .hero-bg .right{background-image: url('https://cdn.pixabay.com/photo/2023/12/11/09/36/whisky-8443153_1280.jpg');}
+  /* center semicircle/round panel */
+  .hero-panel {
+    position: relative;
+    z-index: 10;
+    width: 420px;
+    height: 420px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08); /* โปร่งใส + ขาวบาง ๆ */
+    backdrop-filter: blur(12px) saturate(150%); /* ทำให้เบลอพื้นหลัง */
+    -webkit-backdrop-filter: blur(12px) saturate(150%); /* สำหรับ Safari */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+    transform: translateY(0);
+    border: 2px solid rgba(255, 255, 255, 0.2); /* ขอบโปร่งแสงเหมือนกระจก */
+}
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+  /* small top indicator circle with number */
+  .hero-panel .top-ind{
+    font-size:12px;color:var(--muted);text-align:center;margin-bottom:8px;
+  }
+  .hero-panel .bignum{
+    font-family:"Oswald"; font-size:90px; line-height:0.9; letter-spacing:1px;
+    font-weight:700; margin:0; padding:0; color:var(--white);
+  }
+  .hero-panel .subtitle{
+    margin-top:10px;color:var(--muted);font-size:0.95rem;
+  }
+  .hero-panel .cta{
+    margin-top:18px;padding:10px 20px;background:transparent;border:1px solid rgba(255,255,255,0.12);color:var(--muted);border-radius:4px;font-weight:600;
+    transition:all .18s ease;
+  }
+  .hero-panel .cta:hover{transform:translateY(-3px);border-color:var(--accent);color:var(--white)}
+  /* left logo + small menu in top area (over background) */
+  .hero-topbar{
+    position:absolute;top:18px;left:36px;z-index:30;display:flex;gap:12px;align-items:center;color:var(--white);font-weight:600
+  }
+  .hero-topbar .mini-logo{display:flex;align-items:center;gap:10px}
+  .hero-topbar .mini-logo .dot{width:10px;height:10px;border-radius:50%;background:var(--accent)}
+  .hero-topright {position:absolute;right:36px;top:18px;z-index:30;color:var(--white)}
+  .hero-topright a{margin-left:18px;font-weight:600;color:rgba(255, 255, 255, 0.9)}
+  /* About section */
+  .section{max-width:1100px;margin:60px auto;padding:20px}
+  .about{
+    background:var(--card-bg);padding:48px;border-radius:6px;box-shadow:0 10px 30px rgba(0,0,0,0.55);
+  }
+  .about h2{font-family:"Oswald";font-size:28px;margin-bottom:8px;letter-spacing:1px}
+  .about p{color:var(--muted);line-height:1.6}
+  .divider{height:1px;background:rgba(255,255,255,0.03);margin:40px 0}
+  /* What's On grid */
+  .whats-on{display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:start}
+  .card{
+    background:var(--card-bg);border-radius:6px;overflow:hidden;box-shadow:0 6px 30px rgba(0,0,0,0.5);
+    display:flex;flex-direction:column;
+  }
+  .card .thumb{height:220px;background-size:cover;background-position:center}
+  .card .content{padding:24px;display:flex;flex-direction:column;gap:10px}
+  .card h3{margin:0;font-family:"Oswald";font-weight:600}
+  .card p{margin:0;color:var(--muted);font-size:0.95rem}
+  .card .btn-row{margin-top:12px}
+  .small-cta{
+    display:inline-block;padding:8px 14px;border-radius:4px;border:1px solid rgba(255,255,255,0.08);font-weight:600;font-size:0.9rem;color:var(--muted);
+    transition:all .12s ease;
+  }
+  .small-cta:hover{border-color:var(--accent);color:var(--white);transform:translateY(-2px)}
+  /* Banner */
+  .mid-banner{height:240px;margin:70px 0;border-radius:6px;background-image:linear-gradient(rgba(0,0,0,0.35),rgba(0,0,0,0.35)),url('https://images.unsplash.com/photo-1579226905180-7cc0c7f77f89?auto=format&fit=crop&w=1500&q=80');background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center}
+  .mid-banner h2{font-family:"Oswald";font-size:28px}
+  /* footer */
+  footer{padding:28px;text-align:center;color:var(--muted);font-size:0.92rem;margin-top:40px}
+  /* Responsive */
+  @media (max-width:980px){
+    .hero-panel{width:360px;height:360px}
+    .whats-on{grid-template-columns:1fr}
+    .hero-bg .left{background-position:right center}
+    .hero-bg .right{display:none}
+  }
+  @media (max-width:600px){
+    nav{padding:12px 16px}
+    .hero-panel{width:300px;height:300px}
+    header.hero{padding-top:64px}
+    .hero-topbar{left:16px}
+    .hero-topright{right:16px}
+    .hero-panel .bignum{font-size:64px}
+    .mid-banner{height:180px}
+  }
 
-    const restaurantId = "vyse";
-    const seatMap = document.getElementById("seatMap");
-    const total = document.getElementById("total");
-    const pricePerSeat = 50;
-    const selected = new Set();
-    const seatElements = {};
+  /* small polish for central big text to match "BAR" style visually */
+  .hero-panel .bignum { text-transform:uppercase; font-weight:700; }
+  .hero-panel .bignum span{display:block;font-size:0.28em;color:var(--muted);letter-spacing:1px;margin-bottom:10px}
 
-    const allSeats = [
-      "A1", "A2", "A3", "A4", "A5",
-      "B1", "B2", "B3", "B4", "B5",
-      "C1", "C2", "C3", "C4", "C5",
-      "D1", "D2", "D3", "D4", "D5",
-      "E1", "E2", "E3", "E4", "E5",
-      "F1", "F2", "F3", "F4", "F5"
-    ];
+  .social-icons {
+  margin-top: 15px;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
 
-    // 🔁 สร้างทุกที่นั่ง
-    allSeats.forEach(id => {
-      const seat = document.createElement("div");
-      seat.className = "seat";
-      seat.textContent = id;
-      seat.dataset.id = id;
-      seatMap.appendChild(seat);
-      seatElements[id] = seat;
-    });
+.social-icons a {
+  color: white;
+  font-size: 28px;
+  transition: all 0.3s ease;
+  background: rgba(255,255,255,0.08);
+  padding: 10px;
+  border-radius: 50%;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.2);
+}
 
-    // 👀 โหลดสถานะจาก Firestore แบบ real-time
-    const tablesRef = collection(db, "restaurants", restaurantId, "tables");
-    onSnapshot(tablesRef, snapshot => {
-      snapshot.docChanges().forEach(change => {
-        const id = change.doc.id;
-        const data = change.doc.data();
-        const seat = seatElements[id];
-        if (!seat) return;
+.social-icons a:hover {
+  color: #f15a29;
+  transform: translateY(-3px);
+  background: rgba(255,255,255,0.15);
+}
 
-        seat.className = "seat";
-        if (data.status === "reserved") {
-          seat.classList.add("reserved");
-          seat.onclick = null;
-        } else if (data.status === "blocked") {
-          seat.classList.add("reserved");
-          seat.textContent = "❌";
-          seat.onclick = null;
-        } else {
-          seat.onclick = () => {
-            seat.classList.toggle("selected");
-            if (selected.has(id)) {
-              selected.delete(id);
-            } else {
-              selected.add(id);
-            }
-            total.textContent = selected.size * pricePerSeat;
-          };
-        }
-      });
-    });
+</style>
+</head>
+<body>
 
-    window.reserveSeats = async (userId) => {
-      if (selected.size === 0) {
-        alert("กรุณาเลือกที่นั่งก่อน");
-        return;  // ถ้ายังไม่ได้เลือกที่นั่ง
-      }
+<nav id="nav">
+  <div class="logo">PURDTO</div>
+  <div class="menu">
+    <a href="#about">About</a>
+    <a href="#whats-on">BAR</a>
+    <a href="#contact">Contact</a>
+  </div>
+</nav>
 
-      const now = new Date();
-      const batch = writeBatch(db);  // สร้าง batch ใหม่สำหรับการอัปเดตหลายๆ โต๊ะ
-      let reservedSeats = 0;  // ตัวนับที่นั่งที่จองแล้ว
+<header class="hero" role="banner">
+  <div class="hero-bg" aria-hidden="true">
+    <div class="col left"></div>
+    <div class="col right"></div>
+  </div>
 
-      // อัปเดตหลายที่นั่งใน Firestore
-      for (const id of selected) {
-        const ref = doc(db, "restaurants", restaurantId, "tables", id);
-        batch.update(ref, {
-          status: "reserved",  // เปลี่ยนสถานะโต๊ะเป็น "reserved"
-          reservedBy: userId,  // บันทึก userId ของผู้จอง
-          timestamp: now       // บันทึกเวลา
-        });
-        reservedSeats++;  // เพิ่มตัวนับที่นั่งที่จอง
-      }
+  <div class="hero-topbar" aria-hidden="true">
+    <div class="mini-logo"><div class="dot"></div><div style="font-size:0.95rem"></div></div>
+  </div>
+  <div class="hero-topright" aria-hidden="true">
+    <a href="#"></a>
+    <a href="#"></a>
+    <a href="#"></a>
+  </div>
 
-      try {
-        // คอมมิตการอัปเดตทั้งหมด
-        await batch.commit();
-        console.log(`${reservedSeats} seats reserved successfully!`);
+  <div class="hero-panel" aria-label="Main">
+    <div class="top-ind"></div>
+    <div class="bignum"><span style="font-size:10px;opacity:.95"> </span>เปิดโต๊ะ</div>
+    <div class="subtitle">Local Bar with Live Music</div>
+    <button class="cta" onclick="scrollToSection('#about')">Book a Table</button>
+  </div>
+</header>
 
-        // อัปเดตยอดรวมที่แสดงในหน้าจอ
-        total.textContent = reservedSeats * pricePerSeat;
-      } catch (error) {
-        console.error("Error committing batch:", error);  // ถ้ามีข้อผิดพลาด
-        alert("❌ เกิดข้อผิดพลาดขณะจองที่นั่ง");
-      }
-    };
+<main>
+  <section class="section about" id="about">
+    <h2>About</h2>
+    <p style="margin-top:14px;color:var(--muted);font-size:15px;line-height:1.7">
+      “เปิดโต๊ะ” คือวิธีใหม่ในการจองโต๊ะร้านเหล้าที่ทั้งง่ายและสนุก
+คุณสามารถเลือกโต๊ะที่ถูกใจได้เอง เห็นตำแหน่งจริงในร้านแบบชัด ๆ ผ่านมือถือ
+จองเสร็จปุ๊บ มั่นใจได้ว่ามีโต๊ะรอ ไม่ต้องโทร ไม่ต้องลุ้นให้ว่าง
+พร้อมสิทธิพิเศษและโปรโมชันจากร้านพาร์ทเนอร์ให้ค่ำคืนของคุณพิเศษยิ่งกว่าเดิม
 
-    // ✅ LIFF init
+    </p>
+  </section>
+
+  <div class="section" id="whats-on">
+    <h2 style="text-align:center;margin-bottom:18px;font-family:Oswald">เลือกร้าน</h2>
+
+    <div class="whats-on">
+      <article class="card">
+        <div class="thumb" style="background-image:url('https://scontent.fkkc1-1.fna.fbcdn.net/v/t39.30808-6/495362528_733076125711363_2127601592532654875_n.jpg?stp=cp6_dst-jpg_tt6&_nc_cat=102&ccb=1-7&_nc_sid=833d8c&_nc_ohc=GdSBEfRj_YIQ7kNvwFXGjFA&_nc_oc=Adm3UWORGU1K0olN1UC6qUuyU9EVIPasxULyE7nv83sPvxhYuA11xgvyI9f0Ql9_StI&_nc_zt=23&_nc_ht=scontent.fkkc1-1.fna&_nc_gid=BKspnKUBqCqZz3LvWcpWlg&oh=00_AfUO4fgJ42KXZO0NAs7x7ou8VJaPpWZnDzn55XpQovVliQ&oe=689D3B6C')"></div>
+        <div class="content">
+          <div>
+            <h3>Fuel of Life</h3>
+            <p>Come before 9p.m.</p>
+          </div>
+          <div class="btn-row">
+            <a class="small-cta" href="Fuel.html">Book a Table</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="thumb" style="background-image:url('https://scontent.fkkc1-1.fna.fbcdn.net/v/t39.30808-6/481341677_122141163596512192_1583002569274528957_n.jpg?_nc_cat=100&ccb=1-7&_nc_sid=833d8c&_nc_ohc=iaS_jS8puzAQ7kNvwEYCPDI&_nc_oc=AdmxtcKybvyctkPM64xecNJkDA_y1PS2yMvJrsbak1rX1ilUzPyTuMMj4U2Jl4spK0U&_nc_zt=23&_nc_ht=scontent.fkkc1-1.fna&_nc_gid=HK46FNw4PuwVOjcPjWaYgA&oh=00_AfVa-IP3vMPsTHANV9rZeBMWfkgQpoK5FFId8AbQ3kLpJw&oe=689D398F')"></div>
+        <div class="content">
+          <div>
+            <h3>All In Nongkhai</h3>
+            <p>Come before 9p.m.</p>
+          </div>
+          <div class="btn-row">
+            <a class="small-cta" href="All in.html">Book a Table</a>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+
+  <article class="card">
+        <div class="thumb" style="background-image:url('https://img5.pic.in.th/file/secure-sv1/7a61c0d8-9514-49d4-8cdd-e649ccafee2793388c0dc580abf1.md.jpg')"></div>
+        <div class="content">
+          <div>
+            <h3>Vibes Nongkhai</h3>
+            <p>Come before 9p.m.</p>
+          </div>
+          <div class="btn-row">
+            <a class="small-cta" href="#">Book a Table</a>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="mid-banner" role="img" aria-label="Banner: Come down & grab a pint">
+      <h2>Campaign coming soon</h2>
+    </div>
+  </div>
+
+  <section class="section" id="contact">
+  <div style="max-width:900px;margin:auto;background:transparent;padding:20px 0;text-align:center">
+    <p style="color:var(--muted)">Contact</p>
+    
+    <div class="social-icons">
+      <a href="https://mail.google.com/mail/u/4/?ogbl#inbox" title="Email"><i class="fa-solid fa-envelope"></i></a>
+      <a href="https://www.facebook.com/profile.php?id=61578937960888" target="_blank" title="Facebook"><i class="fa-brands fa-facebook"></i></a>
+      <a href="https://www.tiktok.com/@purdto" target="_blank" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  © <span id="year"></span> PURDTO. All Rights Reserved.
+</footer>
+
+<script>
+   // ✅ LIFF init
     window.onload = function () {
       liff.init({ liffId: "2007619597-pL1yYoj3" }) // ใส่ LIFF ID จริง
         .then(() => {
@@ -129,136 +295,33 @@
           console.error("LIFF Initialization failed", err);
         });
     };
+  // small: update year
+  document.getElementById('year').textContent = new Date().getFullYear();
 
-    // ฟังก์ชัน bookSeats ต้องอยู่ในสโคปนี้
-    window.bookSeats = function () {
-      if (selected.size === 0) {
-        alert("กรุณาเลือกที่นั่งก่อน");
-        return;
-      }
+  // navbar background on scroll
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', ()=> {
+    if(window.scrollY > 30) nav.classList.add('scrolled'); else nav.classList.remove('scrolled');
+  });
 
-      window.reserveSeats(window.userId)
-        .then(() => {
-          console.log("Booking successful!");  // ตรวจสอบว่าเรียกใช้ reserveSeats() แล้ว
-          const flexMessage = {
-            type: "flex",
-            altText: "📌 ยืนยันการจองโต๊ะ",
-            contents: {
-              type: "bubble",
-              header: {
-                type: "box",
-                layout: "vertical",
-                contents: [{
-                  type: "text",
-                  text: "📌 ร้าน Vyse",
-                  weight: "bold",
-                  size: "lg",
-                  color: "#f59e0b"
-                }]
-              },
-              body: {
-                type: "box",
-                layout: "vertical",
-                spacing: "sm",
-                contents: [
-                  {
-                    type: "text",
-                    text: `คุณ ${window.displayName} ได้จองโต๊ะ`,
-                    weight: "bold",
-                    size: "md"
-                  },
-                  {
-                    type: "text",
-                    text: `ที่นั่ง: ${Array.from(selected).join(", ")}`,  // แสดงที่นั่งที่เลือก
-                    size: "sm",
-                    wrap: true
-                  },
-                  {
-                    type: "text",
-                    text: `รวมทั้งหมด: ${selected.size * pricePerSeat} บาท`,  // แสดงยอดรวม
-                    size: "sm",
-                    weight: "bold",
-                    color: "#10b981"
-                  }
-                ]
-              }
-            }
-          };
+  // smooth scroll helper
+  function scrollToSection(sel){
+    const el = document.querySelector(sel);
+    if(!el) return;
+    window.scrollTo({top: el.getBoundingClientRect().top + window.scrollY - 72, behavior:'smooth'});
+  }
 
-          // ส่ง Flex Message ไปยัง LINE
-          liff.sendMessages([flexMessage]);
-        })
-        .then(() => {
-          alert("✅ ส่งข้อมูลจองเรียบร้อยแล้ว");
-          liff.closeWindow();  // ปิดหน้าต่าง LIFF
-        })
-        .catch(err => {
-          console.error("Send message error:", err);
-          alert("❌ ส่งข้อความไม่สำเร็จ");
-        });
-    };
-  </script>
-
-  <style>
-    /* Your CSS styles go here */
-    .restaurant-name {
-      font-size: 36px;
-      font-weight: bold;
-      text-align: center;
-      margin: 20px 0 12px;
-      color: #facc15;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+  // make hero panel vertically centered on small screens (nice touch)
+  function adaptHero(){
+    const heroPanel = document.querySelector('.hero-panel');
+    if(window.innerWidth < 600){
+      heroPanel.style.transform = 'translateY(-10px)';
+    } else {
+      heroPanel.style.transform = 'translateY(0)';
     }
-    body {
-      font-family: 'Prompt', sans-serif;
-      background: linear-gradient(to bottom, #2d004b, #0e0e0e);
-      color: white;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-    }
-    .container { max-width: 400px; width: 100%; padding: 20px; box-sizing: border-box; }
-    .stage { background: #b91c1c; text-align: center; padding: 10px; border-radius: 8px; margin-bottom: 16px; }
-    .seat-map { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px; }
-    .seat { background: #444; padding: 10px; border-radius: 6px; text-align: center; cursor: pointer; }
-    .seat.selected { background: #facc15; color: black; }
-    .seat.reserved { background: #9ca3af; cursor: not-allowed; }
-    .legend { display: flex; justify-content: space-around; font-size: 14px; margin-bottom: 10px; }
-    .legend div { display: flex; align-items: center; gap: 6px; }
-    .dot { width: 12px; height: 12px; border-radius: 3px; }
-    .dot.available { background: #444; }
-    .dot.selected { background: #facc15; }
-    .dot.reserved { background: #9ca3af; }
-    .summary { text-align: center; margin-bottom: 10px; }
-    button { width: 100%; padding: 12px; background: #f59e0b; border: none; border-radius: 8px; font-size: 16px; color: black; cursor: pointer; }
-  </style>
-</head>
-<body>
-  <h1 class="restaurant-name">Vyse</h1>
-  <div class="container">
-    <div style="display: flex; justify-content: flex-start;">
-      <button onclick="location.href='All in.html'" style="background: #fff; color: #000; font-size: 14px; padding: 6px 12px; border: none; border-radius: 6px; width: auto; min-width: 80px; cursor: pointer;">
-        All In
-      </button>
-      <button onclick="location.href='Fuel.html'" style="background: #fff; color: #000; font-size: 14px; padding: 6px 12px; border: none; border-radius: 6px; width: auto; min-width: 80px; cursor: pointer;">
-        Fuel of Life
-      </button>
-    </div>
-  </div>
-
-  <div class="container">
-    <div class="stage">เวที</div>
-    <div class="seat-map" id="seatMap"></div>
-    <div class="legend">
-      <div><div class="dot available"></div> ว่าง</div>
-      <div><div class="dot reserved"></div> จองแล้ว</div>
-      <div><div class="dot selected"></div> เลือกแล้ว</div>
-    </div>
-    <div class="summary">รวม: <span id="total">0</span> บาท</div>
-    <button onclick="bookSeats()">จองเลย</button>
-  </div>
+  }
+  window.addEventListener('resize', adaptHero);
+  adaptHero();
+</script>
 </body>
 </html>
