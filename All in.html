@@ -102,9 +102,9 @@ function updateButtonTotal() {
     displayName: window.displayName,  // 👤 ชื่อจาก LINE
     userId: window.userId             // 🆔 userId จาก LINE
   },
-  timestamp: now          // ⏰ เวลาที่จอง
-   reservedDate: selectedDate  // เพิ่มฟิลด์ reservedDate
-});
+  timestamp: now,         // ⏰ เวลาที่จอง
+    reservedDate: reservedDateTimestamp  // เพิ่มฟิลด์ reservedDate
+  });
         reservedSeats++;  // เพิ่มตัวนับที่นั่งที่จอง
       }
 
