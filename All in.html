@@ -216,7 +216,9 @@ function updateButtonTotal() {
         });
     };
 
-    // ฟังก์ชันสำหรับแสดงปฏิทิน
+    let selectedDate = null;  // ตัวแปรเก็บวันที่ที่เลือก
+
+// ฟังก์ชันสำหรับแสดงปฏิทิน
 function renderCalendar() {
   const currentDate = new Date();
   const maxSelectableDate = new Date();
