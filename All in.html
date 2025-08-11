@@ -20,18 +20,22 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 const restaurantId = "all-in";
-let selected = new Set();
 const seatElements = {};
-const pricePerSeat = 100;  // กำหนดราคาที่นั่ง
+const pricePerSeat = 0;  // กำหนดราคาที่นั่ง
+
+// ตัวแปรเก็บข้อมูลโต๊ะที่ผู้ใช้เลือก
+let selected = new Set(); 
+let selectedDate = null;  // ตัวแปรเพื่อเก็บวันที่ที่ผู้ใช้เลือก
 
 document.addEventListener("DOMContentLoaded", () => {
+  // การเชื่อมโยง Element กับ ID ของโต๊ะ
   document.querySelectorAll(".table").forEach(el => {
     const id = el.dataset.table;
     seatElements[id] = el;
   });
 
+  // การติดตามสถานะของโต๊ะใน Firestore
   const tablesRef = collection(db, "restaurants", restaurantId, "tables");
-
   onSnapshot(tablesRef, snapshot => {
     snapshot.docChanges().forEach(change => {
       const id = change.doc.id;
@@ -41,6 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       seat.classList.remove("selected", "reserved");
 
+      // การอัปเดตสถานะโต๊ะตามข้อมูลใน Firestore
       if (data.status === "reserved") {
         seat.classList.add("reserved");
         seat.onclick = null;
@@ -63,6 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+// ฟังก์ชันอัปเดตยอดรวมของการจอง
 function updateButtonTotal() {
   const total = selected.size * pricePerSeat;
   const btn = document.getElementById("confirmBtn");
@@ -78,6 +84,7 @@ function updateButtonTotal() {
   }
 }
 
+// ฟังก์ชันเพื่อจองที่นั่ง
 window.reserveSeats = async (userId, selectedDate) => {
   if (selected.size === 0) {
     alert("กรุณาเลือกที่นั่งก่อน");
@@ -85,21 +92,22 @@ window.reserveSeats = async (userId, selectedDate) => {
   }
 
   const now = new Date();
-  const batch = writeBatch(db);
+  const batch = writeBatch(db);  // สร้าง batch ใหม่สำหรับการอัปเดตหลายๆ โต๊ะ
   let reservedSeats = 0;
 
+  // อัปเดตสถานะการจองโต๊ะใน Firestore
   for (const id of selected) {
     const ref = doc(db, "restaurants", restaurantId, "tables", id);
-    batch.update(ref, {
-      status: "reserved",
+    batch.update(ref, { 
+      status: "reserved",  // เปลี่ยนสถานะโต๊ะเป็น "reserved"
       reservedBy: {
-        displayName: window.displayName,
-        userId: window.userId
+        displayName: window.displayName, // ชื่อผู้จอง
+        userId: window.userId  // userId ของผู้จอง
       },
-      timestamp: now,
-      reservedDate: selectedDate  // เพิ่มวันที่จอง
+      reservedAt: selectedDate, // เก็บวันที่และเวลาที่จอง
+      timestamp: new Date()  // เวลาที่จอง
     });
-    reservedSeats++;
+    reservedSeats++;  // นับที่นั่งที่ถูกจอง
   }
 
   try {
@@ -112,6 +120,7 @@ window.reserveSeats = async (userId, selectedDate) => {
   }
 };
 
+// ฟังก์ชันที่ใช้สำหรับการจองที่นั่ง
 window.bookSeats = function () {
   if (selected.size === 0) {
     alert("กรุณาเลือกที่นั่งก่อน");
@@ -187,19 +196,17 @@ window.bookSeats = function () {
     });
 };
 
-let selectedDate = null;
-
+// แสดงปฏิทินและให้ผู้ใช้เลือกวันที่
 function renderCalendar() {
   const currentDate = new Date();
   const maxSelectableDate = new Date();
-  maxSelectableDate.setDate(currentDate.getDate() + 7);
+  maxSelectableDate.setDate(currentDate.getDate() + 7); // วันที่สูงสุดที่จะเลือกได้ 7 วัน
 
-  const calendarBody = document.getElementById('calendar-body');
-  const calendarMonth = document.getElementById('calendar-month');
-  
+  // แสดงเดือนและปีในปฏิทิน
   const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
   calendarMonth.textContent = monthNames[currentDate.getMonth()] + " " + (currentDate.getFullYear() + 543);
 
+  // สร้างวันที่ในปฏิทิน
   calendarBody.innerHTML = '';
   for (let i = 0; i <= 7; i++) {
     const day = new Date(currentDate);
@@ -209,35 +216,36 @@ function renderCalendar() {
     dayCell.classList.add('calendar-day');
     dayCell.textContent = day.getDate();
 
+    // เพิ่มวันที่ที่เลือก
     dayCell.addEventListener('click', () => {
       const selectedDays = document.querySelectorAll('.calendar-day.selected-day');
       selectedDays.forEach(day => day.classList.remove('selected-day'));
       dayCell.classList.add('selected-day');
-      selectedDate = day;
+      selectedDate = day; // เก็บวันที่ที่เลือก
     });
 
     calendarBody.appendChild(dayCell);
   }
 
+  // แสดงปฏิทิน
   document.getElementById('calendar-modal').style.display = 'flex';
 }
 
+// ฟังก์ชันปิดปฏิทิน
 function closeCalendar() {
   document.getElementById('calendar-modal').style.display = 'none';
 }
 
+// เมื่อผู้ใช้คลิกปุ่มยืนยันวันที่
 document.getElementById('confirmDateBtn').addEventListener('click', function () {
   if (selectedDate) {
     alert(`คุณเลือกวันที่: ${selectedDate.getDate()}-${selectedDate.getMonth() + 1}-${selectedDate.getFullYear() + 543}`);
-    closeCalendar();
+    updateReservationDateInFirestore(selectedDate);
   } else {
     alert('กรุณาเลือกวันที่');
   }
 });
 
-window.onload = function () {
-  renderCalendar();
-};
 </script>
 
 
