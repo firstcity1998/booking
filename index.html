@@ -232,12 +232,6 @@
           </div>
           <div class="btn-row">
     <a class="small-cta" href="All in.html" id="bookTableBtn">Book a Table</a>
-    <!-- เพิ่มปฏิทินในส่วนนี้ -->
-    <div id="calendar-container" style="display:none;">
-        <h2>เลือกวันที่:</h2>
-        <div id="calendar-body" style="display: flex; gap: 10px;"></div>
-        <p>วันที่ที่เลือก: <span id="selected-date">ยังไม่ได้เลือก</span></p>
-        <button id="submitDateBtn">ยืนยันวันที่</button>
     </div>
 </div>
 
@@ -329,76 +323,6 @@
   }
   window.addEventListener('resize', adaptHero);
   adaptHero();
-
-  // --- ปฏิทิน ---
-let currentDate = new Date();
-let selectedDate = null;
-
-// แสดงวันที่ที่เลือก
-const selectedDateSpan = document.getElementById('selected-date');
-
-// ฟังก์ชันในการสร้างปฏิทิน
-function renderCalendar() {
-  const calendarBody = document.getElementById('calendar-body'); // พื้นที่แสดงวันที่ในปฏิทิน
-  const today = new Date();
-  const sevenDaysLater = new Date(today);
-  sevenDaysLater.setDate(today.getDate() + 7); // วันที่ 7 วันถัดไปจากวันนี้
-
-  // ลบวันเก่าในปฏิทิน
-  calendarBody.innerHTML = '';
-
-  // สร้างวันที่จากวันนี้จนถึง 7 วันข้างหน้า
-  for (let i = 0; i <= 7; i++) {
-    const day = new Date(today);
-    day.setDate(today.getDate() + i); // คำนวณวันที่
-
-    const dayCell = document.createElement('div');
-    dayCell.classList.add('calendar-day-box');
-    dayCell.textContent = day.getDate();
-    dayCell.addEventListener('click', () => selectDate(day)); // เมื่อเลือกวันที่
-
-    // ถ้าวันนี้หรือวันที่ที่เลือกไม่เกิน 7 วัน
-    if (day <= sevenDaysLater) {
-      calendarBody.appendChild(dayCell);
-    }
-  }
-}
-
-// ฟังก์ชันในการเลือกวันที่
-function selectDate(day) {
-  const dayOfWeekNames = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
-  const selectedDayOfWeek = dayOfWeekNames[day.getDay()];
-
-  selectedDateSpan.textContent = `${selectedDayOfWeek}, ${day.getDate()} ${day.toLocaleString('th-TH', { month: 'long' })} ${day.getFullYear() + 543}`;
-  selectedDate = day;
-}
-
-// แสดงปฏิทินเมื่อคลิกที่ปุ่ม "Book a Table"
-document.getElementById("bookTableBtn").addEventListener("click", function(event) {
-  event.preventDefault(); // หยุดการทำงานของการลิงก์ไปที่ "All in.html"
-  
-  // แสดงปฏิทิน
-  document.getElementById("calendar-container").style.display = "block";
-  
-  // เรียกใช้ฟังก์ชันในการสร้างปฏิทิน
-  renderCalendar();
-});
-
-// เมื่อเลือกวันที่แล้วกด "ยืนยันวันที่"
-document.getElementById("submitDateBtn").addEventListener("click", function() {
-  if (selectedDate) {
-    // เก็บวันที่เลือก (สามารถใช้ต่อในหน้าใหม่ได้)
-    const formattedDate = `${selectedDate.getDate()}-${selectedDate.getMonth() + 1}-${selectedDate.getFullYear() + 543}`;
-    
-    // ส่งข้อมูลไปยังหน้า All in.html (เช่นผ่าน query string หรือ localStorage)
-    window.location.href = "All in.html?date=" + encodeURIComponent(formattedDate);
-  } else {
-    alert("กรุณาเลือกวันที่ก่อน!");
-  }
-});
-
-// เรียกใช้งานเมื่อโหลดหน้าเว็บ
-renderCalendar();
 
 </script>
 </body>
