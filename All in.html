@@ -10,7 +10,6 @@
   <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, doc, writeBatch, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { runTransaction } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyByEiQP04T_RxQ88CMZRWxUMI_r9ra5ub4",
@@ -70,46 +69,28 @@ function updateButtonTotal() {
       btn.style.cursor = btn.disabled ? "not-allowed" : "pointer";
     }
 
-window.reserveSeats = async (userId) => {
-  if (selected.size === 0) return;
-  const now = new Date();
+    window.reserveSeats = async (userId) => {
+      if (selected.size === 0) return;
+      const now = new Date();
+      const batch = writeBatch(db);
 
-  try {
-    await runTransaction(db, async (transaction) => {
       for (const id of selected) {
         const ref = doc(db, "restaurants", restaurantId, "tables", id);
-        const docSnap = await transaction.get(ref);
-        
-        // ✅ ตรวจสอบสถานะก่อน
-        if (!docSnap.exists()) {
-          throw `โต๊ะ ${id} ไม่มีอยู่`;
-        }
-        const data = docSnap.data();
-        if (data.status === "reserved" || data.status === "blocked") {
-          throw `โต๊ะ ${id} ถูกจองไปแล้ว`;
-        }
-
-        // ✅ ถ้าโต๊ะว่าง → ทำการจอง
-        transaction.update(ref, {
+        batch.update(ref, {
           status: "reserved",
-          reservedBy: {
-            displayName: window.displayName,
-            userId: window.userId
-          },
+          reservedBy: { displayName: window.displayName, userId: window.userId },
           timestamp: now
         });
       }
-    });
-    selected.clear();
-document.querySelectorAll(".selected").forEach(el => el.classList.remove("selected"));
-    updateButtonTotal();
 
-  } catch (err) {
-    alert(`❌ ไม่สามารถจองโต๊ะได้: ${err}`);
-    console.error("Transaction failed: ", err);
-  }
-};
-
+      try {
+        await batch.commit();
+        updateButtonTotal();
+      } catch (err) {
+        alert("❌ เกิดข้อผิดพลาดขณะจองที่นั่ง");
+        console.error(err);
+      }
+    };
     
     window.onload = function () {
       liff.init({ liffId: "2007619597-pL1yYoj3" })
@@ -124,79 +105,51 @@ document.querySelectorAll(".selected").forEach(el => el.classList.remove("select
         }).catch(console.error);
     };
 
-    window.bookSeats = async function () {
-  if (selected.size === 0) {
-    alert("กรุณาเลือกที่นั่งก่อน");
-    return;
-  }
-
-  const bookedSeats = Array.from(selected);
-
-  await window.reserveSeats(window.userId);
+    window.bookSeats = function () {
+      if (selected.size === 0) {
+        alert("กรุณาเลือกที่นั่งก่อน");
+        return;
+      }
+      window.reserveSeats(window.userId).then(() => {
 
   const flexMessage = {
-    type: "flex",
-    altText: "📌 ยืนยันการจองโต๊ะ",
-    contents: {
-      type: "bubble",
-      styles: {
-        header: { backgroundColor: "#000000" },
-        body: { backgroundColor: "#111111" }
-      },
-      header: {
-        type: "box",
-        layout: "vertical",
-        contents: [
-          {
-            type: "text",
-            text: "📌 ร้าน All In",
-            weight: "bold",
-            size: "lg",
-            color: "#facc15"
+          type: "flex",
+          altText: "📌 ยืนยันการจองโต๊ะ",
+          contents: {
+            type: "bubble",
+            styles: {
+              header: { backgroundColor: "#000000" },
+              body: { backgroundColor: "#111111" }
+            },
+            header: {
+              type: "box",
+              layout: "vertical",
+              contents: [{ type: "text", text: "📌 ร้าน Fuel", weight: "bold", size: "lg", color: "#facc15" }]
+            },
+            body: {
+              type: "box",
+              layout: "vertical",
+              spacing: "sm",
+              contents: [
+                { type: "text", text: `คุณ ${window.displayName} ได้จองโต๊ะ`, weight: "bold", size: "md", color: "#ffffff" },
+                { type: "text", text: `ที่นั่ง: ${Array.from(selected).join(", ")}`, size: "sm", wrap: true, color: "#d4d4d4" },
+                { type: "text", text: `รวมทั้งหมด: ${selected.size * pricePerSeat} บาท`, size: "sm", weight: "bold", color: "#10b981" }
+              ]
+            }
           }
-        ]
-      },
-      body: {
-        type: "box",
-        layout: "vertical",
-        spacing: "sm",
-        contents: [
-          {
-            type: "text",
-            text: `คุณ ${window.displayName} ได้จองโต๊ะ`,
-            weight: "bold",
-            size: "md",
-            color: "#ffffff"
-          },
-          {
-            type: "text",
-            text: `ที่นั่ง: ${bookedSeats.join(", ")}`,
-            size: "sm",
-            wrap: true,
-            color: "#d4d4d4"
-          },
-          {
-            type: "text",
-            text: `รวมทั้งหมด: ${bookedSeats.length * pricePerSeat} บาท`,
-            size: "sm",
-            weight: "bold",
-            color: "#10b981"
-          }
-        ]
-      }
-    }
-  };
+        };
 
-  try {
-    await liff.sendMessages([flexMessage]);
-    alert("✅ ส่งข้อมูลจองเรียบร้อยแล้ว");
-    liff.closeWindow();
-  } catch (err) {
-    alert("❌ ส่งข้อความไม่สำเร็จ");
-    console.error(err);
-  }
-};
-
+        liff.sendMessages([flexMessage])
+          .then(() => {
+            alert("✅ ส่งข้อมูลจองเรียบร้อยแล้ว");
+            liff.closeWindow();
+          })
+          .catch(err => {
+            alert("❌ ส่งข้อความไม่สำเร็จ");
+            console.error(err);
+          });
+      });
+    };
 
 </script>
 
