@@ -124,19 +124,26 @@ function updateButtonTotal() {
 };
 
 
+
     //LINELIFF
     window.onload = function () {
-      liff.init({ liffId: "2007619597-pL1yYoj3" })        //LINELIFF
-        .then(() => {
-          if (!liff.isLoggedIn()) liff.login();
-          else {
-            liff.getProfile().then(profile => {
-              window.userId = profile.userId;
-              window.displayName = profile.displayName;
-            });
-          }
-        }).catch(console.error);
-    };
+  liff.init({ liffId: "2007619597-pL1yYoj3" })        //LINELIFF
+    .then(() => {
+      if (!liff.isLoggedIn()) {
+        console.log("ไม่พบการล็อกอิน, ทำการล็อกอินใหม่");
+        liff.login();
+      } else {
+        liff.getProfile().then(profile => {
+          window.userId = profile.userId;
+          window.displayName = profile.displayName;
+          console.log("User Profile", profile);
+        });
+      }
+    }).catch(err => {
+      console.error("Error in liff initialization: ", err);
+    });
+};
+
 
     // ฟังก์ชันเช็คสถานะโต๊ะเมื่อผู้ใช้เลือกวันที่
 window.checkTableAvailability = async () => {
