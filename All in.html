@@ -27,6 +27,7 @@ const pricePerSeat = 0;  // กำหนดราคาที่นั่ง
 
 const selected = new Set(); // เพิ่มบรรทัดนี้ไว้บนสุด
 document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("checkAvailability").addEventListener("click", window.checkTableAvailability);
       document.querySelectorAll(".table").forEach(el => {
   const id = el.dataset.table;
   seatElements[id] = el;
@@ -69,7 +70,7 @@ function updateButtonTotal() {
       btn.style.cursor = btn.disabled ? "not-allowed" : "pointer";
     }
 
-    window.reserveSeats = async (userId) => {
+   window.reserveSeats = async (userId) => {
   if (selected.size === 0) return;
 
   // ✅ อ่านวันที่จาก input
@@ -93,6 +94,9 @@ function updateButtonTotal() {
     return;
   }
 
+  // แปลง selectedDate เป็น Timestamp
+  const selectedTimestamp = firebase.firestore.Timestamp.fromDate(selectedDate);
+
   const now = new Date();
   const batch = writeBatch(db);
 
@@ -100,7 +104,7 @@ function updateButtonTotal() {
     const ref = doc(db, "restaurants", restaurantId, "tables", id);
     batch.update(ref, {
       status: "reserved",
-      reservationDate: selectedDate, // ✅ บันทึกวันจองไว้ใน Firestore
+      reservationDate: selectedTimestamp, // ✅ ใช้ Timestamp ในการบันทึก
       reservedBy: {
         displayName: window.displayName,
         userId: window.userId,
@@ -119,9 +123,10 @@ function updateButtonTotal() {
   }
 };
 
+
     //LINELIFF
     window.onload = function () {
-      liff.init({ liffId: "2007619597-pL1yYoj3" })
+      liff.init({ liffId: "2007619597-pL1yYoj3" })        //LINELIFF
         .then(() => {
           if (!liff.isLoggedIn()) liff.login();
           else {
@@ -132,6 +137,48 @@ function updateButtonTotal() {
           }
         }).catch(console.error);
     };
+
+    // ฟังก์ชันเช็คสถานะโต๊ะเมื่อผู้ใช้เลือกวันที่
+window.checkTableAvailability = async () => {
+  const dateInput = document.getElementById("reservationDate").value;
+  if (!dateInput) {
+    alert("กรุณาเลือกวันที่ก่อนทำการจอง");
+    return;
+  }
+
+  const selectedDate = new Date(dateInput);
+  selectedDate.setHours(0, 0, 0, 0); // ให้แน่ใจว่าเป็นเวลา 00:00:00
+
+  // แปลง selectedDate เป็น Timestamp
+  const selectedTimestamp = firebase.firestore.Timestamp.fromDate(selectedDate);
+
+  // ตรวจสอบสถานะของโต๊ะในวันที่เลือก
+  const tablesRef = collection(db, "restaurants", restaurantId, "tables");
+  const q = query(tablesRef, where("reservationDate", "==", selectedTimestamp));  // ใช้ selectedTimestamp ที่ถูกต้อง
+
+  // ดึงข้อมูลสถานะโต๊ะ
+  const querySnapshot = await getDocs(q);
+
+  if (querySnapshot.empty) {
+    document.getElementById("tableStatus").innerText = "ทั้งหมดโต๊ะว่าง!";
+  } else {
+    let unavailableTables = [];
+    querySnapshot.forEach(doc => {
+      const data = doc.data();
+      if (data.status === "reserved") {
+        unavailableTables.push(doc.id);  // เก็บชื่อโต๊ะที่จองแล้ว
+      }
+    });
+
+    if (unavailableTables.length > 0) {
+      document.getElementById("tableStatus").innerText = `โต๊ะที่จองแล้ว: ${unavailableTables.join(", ")}`;
+    } else {
+      document.getElementById("tableStatus").innerText = "ทั้งหมดโต๊ะว่าง!";
+    }
+  }
+};
+
+
 
     window.bookSeats = function () {
       if (selected.size === 0) {
@@ -535,21 +582,26 @@ function updateButtonTotal() {
   <label for="reservationDate">📅 เลือกวันที่ต้องการจอง:</label><br />
   <input type="date" id="reservationDate" style="padding: 8px; font-size: 16px; margin: 8px 0;" />
   <br />
-  <button id="confirmBtn" onclick="bookSeats()">จองเลย (0 บาท)</button>
-</div>
+  <button id="checkAvailability">ตรวจสอบสถานะของโต๊ะ</button>
+  </div>
 
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const input = document.getElementById("reservationDate");
-    const today = new Date();
-    const max = new Date();
-    max.setDate(today.getDate() + 7);
+  <!-- แสดงสถานะของโต๊ะ -->
+  <div id="tableStatus"></div>
 
-    input.min = today.toISOString().split("T")[0];
-    input.max = max.toISOString().split("T")[0];
-  });
-</script>
+  <div id="confirmBtnContainer">
+    <button id="confirmBtn" onclick="bookSeats()">จองเลย (0 บาท)</button>
+  </div>
 
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const input = document.getElementById("reservationDate");
+      const today = new Date();
+      const max = new Date();
+      max.setDate(today.getDate() + 7);
 
+      input.min = today.toISOString().split("T")[0];
+      input.max = max.toISOString().split("T")[0];
+    });
+  </script>
 </body>
 </html>  
