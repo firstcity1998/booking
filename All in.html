@@ -434,32 +434,31 @@ window.checkTableAvailability = async () => {
   pointer-events: none;
 }
 
-  #confirmBtnContainer {
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    background: #ffffffee;
-    text-align: center;
-    padding: 12px;
-    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
-    z-index: 10;
-  }
+  /* ปุ่มที่ด้านบน */
+#topBtnContainer {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  background: #ffffffee;
+  text-align: center;
+  padding: 12px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
 
-  #confirmBtn {
-    padding: 10px 24px;
-    font-size: 16px;
-    background-color: #10b981;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-  }
+/* ปุ่มที่ด้านล่าง */
+#confirmBtnContainer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: #ffffffee;
+  text-align: center;
+  padding: 12px;
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
 
-  #confirmBtn:hover {
-    background-color: #059669;
-  }
-
-  /* ปฏิทิน Modal */
+/* ปฏิทิน Modal */
 .calendar-modal {
   display: none;
   position: fixed;
@@ -472,6 +471,7 @@ window.checkTableAvailability = async () => {
   align-items: center;
   z-index: 9999;
 }
+
 
 /* ปฏิทิน Container */
 .calendar-container {
@@ -578,19 +578,19 @@ window.checkTableAvailability = async () => {
   </div>
 
  
-<div id="confirmBtnContainer">
+<!-- ปุ่มตรวจสอบสถานะโต๊ะกับปฏิทิน -->
+<div id="topBtnContainer">
   <label for="reservationDate">📅 เลือกวันที่ต้องการจอง:</label><br />
   <input type="date" id="reservationDate" style="padding: 8px; font-size: 16px; margin: 8px 0;" />
   <br />
   <button id="checkAvailability">ตรวจสอบสถานะของโต๊ะ</button>
-  </div>
+</div>
 
-  <!-- แสดงสถานะของโต๊ะ -->
-  <div id="tableStatus"></div>
+<!-- ปุ่มจองอยู่ด้านล่าง -->
+<div id="confirmBtnContainer">
+  <button id="confirmBtn" onclick="bookSeats()">จองเลย (0 บาท)</button>
+</div>
 
-  <div id="confirmBtnContainer">
-    <button id="confirmBtn" onclick="bookSeats()">จองเลย (0 บาท)</button>
-  </div>
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
