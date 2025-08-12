@@ -70,28 +70,56 @@ function updateButtonTotal() {
     }
 
     window.reserveSeats = async (userId) => {
-      if (selected.size === 0) return;
-      const now = new Date();
-      const batch = writeBatch(db);
+  if (selected.size === 0) return;
 
-      for (const id of selected) {
-        const ref = doc(db, "restaurants", restaurantId, "tables", id);
-        batch.update(ref, {
-          status: "reserved",
-          reservedBy: { displayName: window.displayName, userId: window.userId },
-          timestamp: now
-        });
-      }
+  // ✅ อ่านวันที่จาก input
+  const dateInput = document.getElementById("reservationDate").value;
+  if (!dateInput) {
+    alert("กรุณาเลือกวันที่ก่อนทำการจอง");
+    return;
+  }
 
-      try {
-        await batch.commit();
-        updateButtonTotal();
-      } catch (err) {
-        alert("❌ เกิดข้อผิดพลาดขณะจองที่นั่ง");
-        console.error(err);
+  const selectedDate = new Date(dateInput);
+  const today = new Date();
+  const maxDate = new Date();
+
+  today.setHours(0, 0, 0, 0);
+  maxDate.setDate(today.getDate() + 7);
+  maxDate.setHours(23, 59, 59, 999);
+  selectedDate.setHours(0, 0, 0, 0);
+
+  if (selectedDate < today || selectedDate > maxDate) {
+    alert("คุณสามารถจองล่วงหน้าได้ไม่เกิน 7 วันจากวันนี้เท่านั้น");
+    return;
+  }
+
+  const now = new Date();
+  const batch = writeBatch(db);
+
+  for (const id of selected) {
+    const ref = doc(db, "restaurants", restaurantId, "tables", id);
+    batch.update(ref, {
+      status: "reserved",
+      reservationDate: selectedDate, // ✅ บันทึกวันจองไว้ใน Firestore
+      reservedBy: {
+        displayName: window.displayName,
+        userId: window.userId,
+        status: "reserved",
+        timestamp: now
       }
-    };
-    
+    });
+  }
+
+  try {
+    await batch.commit();
+    updateButtonTotal();
+  } catch (err) {
+    alert("❌ เกิดข้อผิดพลาดขณะจองที่นั่ง");
+    console.error(err);
+  }
+};
+
+    //LINELIFF
     window.onload = function () {
       liff.init({ liffId: "2007619597-pL1yYoj3" })
         .then(() => {
@@ -504,10 +532,23 @@ function updateButtonTotal() {
 
  
 <div id="confirmBtnContainer">
+  <label for="reservationDate">📅 เลือกวันที่ต้องการจอง:</label><br />
+  <input type="date" id="reservationDate" style="padding: 8px; font-size: 16px; margin: 8px 0;" />
+  <br />
   <button id="confirmBtn" onclick="bookSeats()">จองเลย (0 บาท)</button>
 </div>
 
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const input = document.getElementById("reservationDate");
+    const today = new Date();
+    const max = new Date();
+    max.setDate(today.getDate() + 7);
 
+    input.min = today.toISOString().split("T")[0];
+    input.max = max.toISOString().split("T")[0];
+  });
+</script>
 
 
 </body>
