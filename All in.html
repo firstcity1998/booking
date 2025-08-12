@@ -9,7 +9,7 @@
 
   <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, doc, writeBatch, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, doc, writeBatch, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyByEiQP04T_RxQ88CMZRWxUMI_r9ra5ub4",
@@ -181,50 +181,57 @@ window.checkTableAvailability = async () => {
 
 
     window.bookSeats = function () {
-      if (selected.size === 0) {
-        alert("กรุณาเลือกที่นั่งก่อน");
-        return;
+  if (selected.size === 0) {
+    alert("กรุณาเลือกที่นั่งก่อน");
+    return;
+  }
+  
+  const dateInput = document.getElementById("reservationDate").value;
+  if (!dateInput) {
+    alert("กรุณาเลือกวันที่ก่อนทำการจอง");
+    return;
+  }
+  
+  window.reserveSeats(window.userId).then(() => {
+    const flexMessage = {
+      type: "flex",
+      altText: "📌 ยืนยันการจองโต๊ะ",
+      contents: {
+        type: "bubble",
+        styles: {
+          header: { backgroundColor: "#000000" },
+          body: { backgroundColor: "#111111" }
+        },
+        header: {
+          type: "box",
+          layout: "vertical",
+          contents: [{ type: "text", text: "📌 ร้าน Fuel", weight: "bold", size: "lg", color: "#facc15" }]
+        },
+        body: {
+          type: "box",
+          layout: "vertical",
+          spacing: "sm",
+          contents: [
+            { type: "text", text: `คุณ ${window.displayName} ได้จองโต๊ะ`, weight: "bold", size: "md", color: "#ffffff" },
+            { type: "text", text: `ที่นั่ง: ${Array.from(selected).join(", ")}`, size: "sm", wrap: true, color: "#d4d4d4" },
+            { type: "text", text: `รวมทั้งหมด: ${selected.size * pricePerSeat} บาท`, size: "sm", weight: "bold", color: "#10b981" }
+          ]
+        }
       }
-      window.reserveSeats(window.userId).then(() => {
-
-  const flexMessage = {
-          type: "flex",
-          altText: "📌 ยืนยันการจองโต๊ะ",
-          contents: {
-            type: "bubble",
-            styles: {
-              header: { backgroundColor: "#000000" },
-              body: { backgroundColor: "#111111" }
-            },
-            header: {
-              type: "box",
-              layout: "vertical",
-              contents: [{ type: "text", text: "📌 ร้าน Fuel", weight: "bold", size: "lg", color: "#facc15" }]
-            },
-            body: {
-              type: "box",
-              layout: "vertical",
-              spacing: "sm",
-              contents: [
-                { type: "text", text: `คุณ ${window.displayName} ได้จองโต๊ะ`, weight: "bold", size: "md", color: "#ffffff" },
-                { type: "text", text: `ที่นั่ง: ${Array.from(selected).join(", ")}`, size: "sm", wrap: true, color: "#d4d4d4" },
-                { type: "text", text: `รวมทั้งหมด: ${selected.size * pricePerSeat} บาท`, size: "sm", weight: "bold", color: "#10b981" }
-              ]
-            }
-          }
-        };
-
-        liff.sendMessages([flexMessage])
-          .then(() => {
-            alert("✅ ส่งข้อมูลจองเรียบร้อยแล้ว");
-            liff.closeWindow();
-          })
-          .catch(err => {
-            alert("❌ ส่งข้อความไม่สำเร็จ");
-            console.error(err);
-          });
-      });
     };
+
+    liff.sendMessages([flexMessage])
+      .then(() => {
+        alert("✅ ส่งข้อมูลจองเรียบร้อยแล้ว");
+        liff.closeWindow();
+      })
+      .catch(err => {
+        alert("❌ ส่งข้อความไม่สำเร็จ");
+        console.error(err);
+      });
+  });
+};
+
 
 </script>
 
@@ -434,16 +441,12 @@ window.checkTableAvailability = async () => {
   pointer-events: none;
 }
 
-  /* ปุ่มที่ด้านบน */
-#topBtnContainer {
-  position: fixed;
-  top: 0;
-  width: 100%;
-  background: #ffffffee;
+  /* แทนที่ #topBtnContainer ด้วยการใช้ #reservationContainer เพื่อให้มันไม่บังโต๊ะ */
+#reservationContainer {
+  padding: 16px;
   text-align: center;
-  padding: 12px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  z-index: 10;
+  position: relative;
+  z-index: 5;
 }
 
 /* ปุ่มที่ด้านล่าง */
@@ -457,6 +460,23 @@ window.checkTableAvailability = async () => {
   box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
   z-index: 10;
 }
+
+#confirmBtn {
+  cursor: pointer;
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  font-size: 16px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+#confirmBtn:disabled {
+  background-color: #e0e0e0;
+  cursor: not-allowed;
+}
+
 
 /* ปฏิทิน Modal */
 .calendar-modal {
@@ -578,19 +598,18 @@ window.checkTableAvailability = async () => {
   </div>
 
  
-<!-- ปุ่มตรวจสอบสถานะโต๊ะกับปฏิทิน -->
-<div id="topBtnContainer">
-  <label for="reservationDate">📅 เลือกวันที่ต้องการจอง:</label><br />
-  <input type="date" id="reservationDate" style="padding: 8px; font-size: 16px; margin: 8px 0;" />
-  <br />
-  <button id="checkAvailability">ตรวจสอบสถานะของโต๊ะ</button>
-</div>
+<!-- ปฏิทินและปุ่มตรวจสอบสถานะจะไปอยู่ที่ส่วนบนสุด -->
+  <div id="reservationContainer">
+    <label for="reservationDate">📅 เลือกวันที่ต้องการจอง:</label><br />
+    <input type="date" id="reservationDate" style="padding: 8px; font-size: 16px; margin: 8px 0;" />
+    <br />
+    <button id="checkAvailability">ตรวจสอบสถานะของโต๊ะ</button>
+  </div>
 
-<!-- ปุ่มจองอยู่ด้านล่าง -->
-<div id="confirmBtnContainer">
-  <button id="confirmBtn" onclick="bookSeats()">จองเลย (0 บาท)</button>
-</div>
-
+  <!-- ปุ่มจองด้านล่าง -->
+  <div id="confirmBtnContainer">
+    <button id="confirmBtn" onclick="bookSeats()" disabled>จองเลย (0 บาท)</button>
+  </div>
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
