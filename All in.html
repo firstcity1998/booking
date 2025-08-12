@@ -145,45 +145,47 @@ function updateButtonTotal() {
 };
 
 
-    // ฟังก์ชันเช็คสถานะโต๊ะเมื่อผู้ใช้เลือกวันที่
-window.checkTableAvailability = async () => {
-  const dateInput = document.getElementById("reservationDate").value;
-  if (!dateInput) {
-    alert("กรุณาเลือกวันที่ก่อนทำการจอง");
-    return;
-  }
+     // การตรวจสอบสถานะโต๊ะเมื่อเลือกวันที่
+  document.getElementById("reservationDate").addEventListener("input", window.checkTableAvailability);
 
-  const selectedDate = new Date(dateInput);
-  selectedDate.setHours(0, 0, 0, 0); // ให้แน่ใจว่าเป็นเวลา 00:00:00
-
-  // แปลง selectedDate เป็น Timestamp
-  const selectedTimestamp = firebase.firestore.Timestamp.fromDate(selectedDate);
-
-  // ตรวจสอบสถานะของโต๊ะในวันที่เลือก
-  const tablesRef = collection(db, "restaurants", restaurantId, "tables");
-  const q = query(tablesRef, where("reservationDate", "==", selectedTimestamp));  // ใช้ selectedTimestamp ที่ถูกต้อง
-
-  // ดึงข้อมูลสถานะโต๊ะ
-  const querySnapshot = await getDocs(q);
-
-  if (querySnapshot.empty) {
-    document.getElementById("tableStatus").innerText = "ทั้งหมดโต๊ะว่าง!";
-  } else {
-    let unavailableTables = [];
-    querySnapshot.forEach(doc => {
-      const data = doc.data();
-      if (data.status === "reserved") {
-        unavailableTables.push(doc.id);  // เก็บชื่อโต๊ะที่จองแล้ว
-      }
-    });
-
-    if (unavailableTables.length > 0) {
-      document.getElementById("tableStatus").innerText = `โต๊ะที่จองแล้ว: ${unavailableTables.join(", ")}`;
-    } else {
-      document.getElementById("tableStatus").innerText = "ทั้งหมดโต๊ะว่าง!";
+  window.checkTableAvailability = async () => {
+    const dateInput = document.getElementById("reservationDate").value;
+    if (!dateInput) {
+      alert("กรุณาเลือกวันที่ก่อนทำการจอง");
+      return;
     }
-  }
-};
+
+    const selectedDate = new Date(dateInput);
+    selectedDate.setHours(0, 0, 0, 0); // ให้แน่ใจว่าเป็นเวลา 00:00:00
+
+    // แปลง selectedDate เป็น Timestamp
+    const selectedTimestamp = firebase.firestore.Timestamp.fromDate(selectedDate);
+
+    // ตรวจสอบสถานะของโต๊ะในวันที่เลือก
+    const tablesRef = collection(db, "restaurants", restaurantId, "tables");
+    const q = query(tablesRef, where("reservationDate", "==", selectedTimestamp));  // ใช้ selectedTimestamp ที่ถูกต้อง
+
+    // ดึงข้อมูลสถานะโต๊ะ
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      document.getElementById("tableStatus").innerText = "ทั้งหมดโต๊ะว่าง!";
+    } else {
+      let unavailableTables = [];
+      querySnapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.status === "reserved") {
+          unavailableTables.push(doc.id);  // เก็บชื่อโต๊ะที่จองแล้ว
+        }
+      });
+
+      if (unavailableTables.length > 0) {
+        document.getElementById("tableStatus").innerText = `โต๊ะที่จองแล้ว: ${unavailableTables.join(", ")}`;
+      } else {
+        document.getElementById("tableStatus").innerText = "ทั้งหมดโต๊ะว่าง!";
+      }
+    }
+  };
 
 
 
@@ -483,58 +485,13 @@ window.checkTableAvailability = async () => {
   background-color: #e0e0e0;
   cursor: not-allowed;
 }
-/* ทำให้ตัว container อยู่ด้านบน */
-#reservationContainer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start; /* ตั้งค่าตำแหน่งให้เริ่มจากด้านบน */
-  height: 100vh; /* ทำให้เต็มหน้าจอ */
-  padding-top: 20px; /* เพิ่มช่องว่างด้านบน */
-  box-sizing: border-box;
-  text-align: center;
-}
-
-/* ปรับขนาด input ให้เหมาะสมกับหน้าจอมือถือ */
-#reservationDate {
-  padding: 8px;
-  font-size: 16px;
-  margin: 8px 0;
-  width: 90%; /* ให้มีความกว้าง 90% ของหน้าจอ */
-  max-width: 350px; /* จำกัดความกว้างสูงสุด */
-}
-
-/* ปุ่มตรวจสอบสถานะโต๊ะ */
-#checkAvailability {
-  padding: 10px 20px;
-  font-size: 16px;
-  margin-top: 10px;
-  width: 90%;
-  max-width: 350px;
-  background-color: #4CAF50; /* สีปุ่ม */
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-
-/* เพิ่ม effect hover สำหรับปุ่ม */
-#checkAvailability:hover {
-  background-color: #45a049;
-}
-
 
 
   </style>
 </head>
 <body>
-  <!-- ปฏิทินและปุ่มตรวจสอบสถานะจะไปอยู่ที่ส่วนบนสุด -->
-  <div id="reservationContainer">
-    <label for="reservationDate">📅 เลือกวันที่ต้องการจอง:</label><br />
-    <input type="date" id="reservationDate" style="padding: 8px; font-size: 16px; margin: 8px 0;" />
-    <br />
-    <button id="checkAvailability">ตรวจสอบสถานะของโต๊ะ</button>
-  </div>
-
+  
+<div id="tableStatus" style="text-align: center; font-size: 18px; margin-top: 10px;"></div>
   <h1  class="restaurant-name"></h1>
   
 
@@ -567,6 +524,12 @@ window.checkTableAvailability = async () => {
     <div class="bar bar-right">Bar</div>
     <div class="door door-top-right"></div>
     <div class="door door-bottom-left"></div>
+  </div>
+  <!-- ปฏิทินและปุ่มตรวจสอบสถานะ -->
+  <div id="reservationContainer">
+    <label for="reservationDate">📅 เลือกวันที่ต้องการจอง:</label><br />
+    <input type="date" id="reservationDate" style="padding: 8px; font-size: 16px; margin: 8px 0;" />
+    <br />
   </div>
 
 
