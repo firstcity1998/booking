@@ -476,27 +476,45 @@ window.checkTableAvailability = async () => {
   background-color: #e0e0e0;
   cursor: not-allowed;
 }
-/* ทำให้ตัว container อยู่ตรงกลางของหน้าจอ */
+/* ทำให้ตัว container อยู่ด้านบน */
 #reservationContainer {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start; /* ตั้งค่าตำแหน่งให้เริ่มจากด้านบน */
   height: 100vh; /* ทำให้เต็มหน้าจอ */
+  padding-top: 20px; /* เพิ่มช่องว่างด้านบน */
+  box-sizing: border-box;
   text-align: center;
 }
 
+/* ปรับขนาด input ให้เหมาะสมกับหน้าจอมือถือ */
 #reservationDate {
   padding: 8px;
   font-size: 16px;
   margin: 8px 0;
+  width: 90%; /* ให้มีความกว้าง 90% ของหน้าจอ */
+  max-width: 350px; /* จำกัดความกว้างสูงสุด */
 }
 
+/* ปุ่มตรวจสอบสถานะโต๊ะ */
 #checkAvailability {
   padding: 10px 20px;
   font-size: 16px;
   margin-top: 10px;
+  width: 90%;
+  max-width: 350px;
+  background-color: #4CAF50; /* สีปุ่ม */
+  color: white;
+  border: none;
+  cursor: pointer;
 }
+
+/* เพิ่ม effect hover สำหรับปุ่ม */
+#checkAvailability:hover {
+  background-color: #45a049;
+}
+
 
 
   </style>
