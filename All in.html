@@ -476,92 +476,39 @@ window.checkTableAvailability = async () => {
   background-color: #e0e0e0;
   cursor: not-allowed;
 }
-
-
-/* ปฏิทิน Modal */
-.calendar-modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  justify-content: center;
+/* ทำให้ตัว container อยู่ตรงกลางของหน้าจอ */
+#reservationContainer {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  z-index: 9999;
-}
-
-
-/* ปฏิทิน Container */
-.calendar-container {
-  background-color: white;
-  padding: 20px;
-  border-radius: 10px;
-  width: 300px;
+  justify-content: center;
+  height: 100vh; /* ทำให้เต็มหน้าจอ */
   text-align: center;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* ปฏิทิน Header */
-.calendar-header {
-  font-size: 20px;
-  font-weight: bold;
-  margin-bottom: 10px;
-}
-
-/* ปฏิทิน Body */
-.calendar-body {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 5px;
-  margin-bottom: 10px;
-}
-
-/* ปฏิทิน วัน */
-.calendar-day {
-  padding: 10px;
-  cursor: pointer;
-  border-radius: 5px;
+#reservationDate {
+  padding: 8px;
   font-size: 16px;
+  margin: 8px 0;
 }
 
-.calendar-day:hover {
-  background-color: #f0f0f0;
-}
-
-/* ปฏิทิน วันที่เลือก */
-.selected-day {
-  background-color: #10b981;
-  color: white;
-}
-
-/* ปุ่มยืนยัน */
-.calendar-button {
+#checkAvailability {
   padding: 10px 20px;
-  background-color: #10b981;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
+  font-size: 16px;
+  margin-top: 10px;
 }
 
-.calendar-button:hover {
-  background-color: #059669;
-}
 
   </style>
 </head>
 <body>
-  <div id="calendar-modal" class="calendar-modal">
-  <div class="calendar-container">
-    <div class="calendar-header">
-      <span id="calendar-month"></span>
-    </div>
-    <div class="calendar-body" id="calendar-body"></div>
-    <button id="confirmDateBtn" class="calendar-button">ยืนยันวันที่</button>
+  <!-- ปฏิทินและปุ่มตรวจสอบสถานะจะไปอยู่ที่ส่วนบนสุด -->
+  <div id="reservationContainer">
+    <label for="reservationDate">📅 เลือกวันที่ต้องการจอง:</label><br />
+    <input type="date" id="reservationDate" style="padding: 8px; font-size: 16px; margin: 8px 0;" />
+    <br />
+    <button id="checkAvailability">ตรวจสอบสถานะของโต๊ะ</button>
   </div>
-</div>
 
   <h1  class="restaurant-name"></h1>
   
@@ -597,14 +544,6 @@ window.checkTableAvailability = async () => {
     <div class="door door-bottom-left"></div>
   </div>
 
- 
-<!-- ปฏิทินและปุ่มตรวจสอบสถานะจะไปอยู่ที่ส่วนบนสุด -->
-  <div id="reservationContainer">
-    <label for="reservationDate">📅 เลือกวันที่ต้องการจอง:</label><br />
-    <input type="date" id="reservationDate" style="padding: 8px; font-size: 16px; margin: 8px 0;" />
-    <br />
-    <button id="checkAvailability">ตรวจสอบสถานะของโต๊ะ</button>
-  </div>
 
   <!-- ปุ่มจองด้านล่าง -->
   <div id="confirmBtnContainer">
