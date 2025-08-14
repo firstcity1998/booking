@@ -494,8 +494,10 @@ async function loadTablesForDate(dateStr){
   </style>
 </head>
 <body>
-  <div id="dateChips" class="date-chips"></div>
-  <h1  class="restaurant-name"></h1>
+  <!-- ปฏิทินเลือกวัน -->
+<div id="dateSelector" style="display:flex; gap:8px; justify-content:center; margin-bottom:12px;">
+  <input type="date" id="bookingDate" min="">
+</div>
   
 
   <div class="layout">
@@ -533,7 +535,17 @@ async function loadTablesForDate(dateStr){
 <div id="confirmBtnContainer">
   <button id="confirmBtn" onclick="bookSeats()">จองเลย (0 บาท)</button>
 </div>
+<script>
+  // ตั้งค่า min ให้เป็นวันนี้
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  document.getElementById("bookingDate").min = `${yyyy}-${mm}-${dd}`;
 
+  // ค่าเริ่มต้นเป็นวันนี้
+  document.getElementById("bookingDate").value = `${yyyy}-${mm}-${dd}`;
+</script>
 
 
 
