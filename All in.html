@@ -25,6 +25,8 @@
   const selected = new Set();
   const seatElements = {};
 
+  let selectedDate = ""; // ✅ เพิ่มบรรทัดนี้ก่อนใช้งาน selectedDate
+
   function renderDateChips(days = 7) {
   const box = document.getElementById("dateChips");
   box.innerHTML = "";
@@ -492,8 +494,9 @@ async function loadTablesForDate(dateStr){
   </style>
 </head>
 <body>
-  <h1  class="restaurant-name"></h1>
   <div id="dateChips" class="date-chips"></div>
+  <h1  class="restaurant-name"></h1>
+  
 
   <div class="layout">
     <div class="stage">STAGE</div>
