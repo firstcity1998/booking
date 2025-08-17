@@ -25,196 +25,188 @@
   const selected = new Set();
   const seatElements = {};
 
-  document.addEventListener("DOMContentLoaded", () => {
-    // 1️⃣ Map โต๊ะทั้งหมด
-    document.querySelectorAll(".table").forEach(el => {
-      const id = el.dataset.table;
-      seatElements[id] = el;
-    });
+  // ฟังก์ชันเมื่อโหลดหน้าเอกสาร
+    document.addEventListener("DOMContentLoaded", () => {
+      const datePicker = document.getElementById("date-picker");
+      const today = new Date();
+      const maxDate = new Date(today);
+      maxDate.setDate(today.getDate() + 7);  // ตั้งค่าสูงสุดเป็น 7 วันจากวันนี้
+      const maxDateString = maxDate.toISOString().split('T')[0]; // ฟอร์แมตเป็น YYYY-MM-DD
+      datePicker.setAttribute("max", maxDateString);
+      datePicker.value = today.toISOString().split('T')[0];  // ตั้งค่าวันปัจจุบันเป็น default
 
-    // 2️⃣ รอ DOM แล้วค่อยเชื่อม Firestore
-    const tablesRef = collection(db, "restaurants", restaurantId, "tables");
-
-    onSnapshot(tablesRef, snapshot => {
-      snapshot.docChanges().forEach(change => {
-        console.log("📡 Firestore snapshot loaded:", snapshot.docs.length); // เพิ่มบรรทัดนี้
-        const id = change.doc.id;
-        const data = change.doc.data();
-        const seat = seatElements[id];
-        if (!seat) return;
-
-seat.classList.remove("selected", "reserved");
-
-if (data.status === "reserved") {
-  seat.classList.add("reserved");
-  seat.onclick = null;
-} else if (data.status === "blocked") {
-  seat.classList.add("reserved");
-  seat.textContent = "❌";
-  seat.onclick = null;
-} else {
-  seat.onclick = () => {
-  seat.classList.toggle("selected");
-  if (selected.has(id)) {
-    selected.delete(id);
-  } else {
-    selected.add(id);
-  }
-  updateButtonTotal();  // ✅ เพิ่มตรงนี้แทน document.getElementById("total") ที่ใช้ไม่ได้
-};
-}
-
+      datePicker.addEventListener("change", () => {
+        loadTablesForSelectedDate(datePicker.value);  // โหลดโต๊ะเมื่อเลือกวัน
       });
-    });
-  });
-function updateButtonTotal() {
-  const total = selected.size * pricePerSeat;
-  const btn = document.getElementById("confirmBtn");
-  btn.textContent = `จองเลย (${total} บาท)`;
-  btn.disabled = selected.size === 0;
 
-  // เพิ่ม style ตอน disabled (ถ้าต้องการ)
-  if (btn.disabled) {
-    btn.style.backgroundColor = "#9ca3af";
-    btn.style.cursor = "not-allowed";
-  } else {
-    btn.style.backgroundColor = "#10b981";
-    btn.style.cursor = "pointer";
-  }
-}
+      // โหลดโต๊ะสำหรับวันที่เลือก
+      loadTablesForSelectedDate(today.toISOString().split('T')[0]);
+      
+      function loadTablesForSelectedDate(selectedDate) {
+        const tablesRef = collection(db, "restaurants", restaurantId, "dates", selectedDate, "tables");
 
-    window.reserveSeats = async (userId) => {
-      if (selected.size === 0) {
-        alert("กรุณาเลือกที่นั่งก่อน");
-        return;  // ถ้ายังไม่ได้เลือกที่นั่ง
-      }
+        onSnapshot(tablesRef, snapshot => {
+          snapshot.docChanges().forEach(change => {
+            const id = change.doc.id;
+            const data = change.doc.data();
+            const seat = seatElements[id];
+            if (!seat) return;
 
-      const now = new Date();
-      const batch = writeBatch(db);  // สร้าง batch ใหม่สำหรับการอัปเดตหลายๆ โต๊ะ
-      let reservedSeats = 0;  // ตัวนับที่นั่งที่จองแล้ว
+            seat.classList.remove("selected", "reserved");
 
-      // อัปเดตหลายที่นั่งใน Firestore
-      for (const id of selected) {
-        const ref = doc(db, "restaurants", restaurantId, "tables", id);
-      batch.update(ref, { 
-  status: "reserved",     // เปลี่ยนสถานะโต๊ะเป็น "reserved"
-  reservedBy: {           // เก็บข้อมูลผู้จอง
-    displayName: window.displayName,  // 👤 ชื่อจาก LINE
-    userId: window.userId             // 🆔 userId จาก LINE
-  },
-  timestamp: now          // ⏰ เวลาที่จอง
-});
-        reservedSeats++;  // เพิ่มตัวนับที่นั่งที่จอง
-      }
-
-      try {
-  await batch.commit();
-  console.log(`${reservedSeats} seats reserved successfully!`);
-
-  updateButtonTotal(); // ✅ ใช้ฟังก์ชันนี้แทน total.textContent
-}
- catch (error) {
-        console.error("Error committing batch:", error);  // ถ้ามีข้อผิดพลาด
-       alert("❌ เกิดข้อผิดพลาดขณะจองที่นั่ง");
-      }
-    };
-
-    // ✅ LIFF init
-    window.onload = function () {
-      liff.init({ liffId: "2007619597-pL1yYoj3" }) // ใส่ LIFF ID จริง
-        .then(() => {
-          if (!liff.isLoggedIn()) {
-            liff.login();
-          } else {
-            liff.getProfile().then(profile => {
-              window.userId = profile.userId;
-              window.displayName = profile.displayName;
-            });
-          }
-        })
-        .catch(err => {
-          console.error("LIFF Initialization failed", err);
+            if (data.status === "reserved") {
+              seat.classList.add("reserved");
+              seat.onclick = null;  // ไม่ให้เลือกโต๊ะที่จองแล้ว
+            } else if (data.status === "blocked") {
+              seat.classList.add("reserved");
+              seat.textContent = "❌";  // โต๊ะที่บล็อก
+              seat.onclick = null;
+            } else {
+              seat.onclick = () => {
+                seat.classList.toggle("selected");
+                if (selected.has(id)) {
+                  selected.delete(id);
+                } else {
+                  selected.add(id);
+                }
+                updateButtonTotal();  // อัปเดตยอดรวมเมื่อเลือกโต๊ะ
+              };
+            }
+          });
         });
-    };
-
-    // ฟังก์ชัน bookSeats ต้องอยู่ในสโคปนี้
-    window.bookSeats = function () {
-      if (selected.size === 0) {
-        alert("กรุณาเลือกที่นั่งก่อน");
-        return;
       }
 
-      window.reserveSeats(window.userId)
-        .then(() => {
-          console.log("Booking successful!");  // ตรวจสอบว่าเรียกใช้ reserveSeats() แล้ว
+      // ฟังก์ชันอัปเดตยอดรวมในปุ่ม
+      function updateButtonTotal() {
+        const total = selected.size * pricePerSeat;
+        const btn = document.getElementById("confirmBtn");
+        btn.textContent = `จองเลย (${total} บาท)`;
+        btn.disabled = selected.size === 0;  // ถ้าไม่มีที่นั่งเลือก ปิดปุ่ม
+
+        if (btn.disabled) {
+          btn.style.backgroundColor = "#9ca3af";
+          btn.style.cursor = "not-allowed";
+        } else {
+          btn.style.backgroundColor = "#10b981";
+          btn.style.cursor = "pointer";
+        }
+      }
+
+      // LIFF Initialization
+      window.onload = function () {
+        liff.init({ liffId: "2007619597-pL1yYoj3" }) // ใส่ LIFF ID จริง
+          .then(() => {
+            if (!liff.isLoggedIn()) {
+              liff.login();  // ถ้ายังไม่ได้ login ให้ login ก่อน
+            } else {
+              liff.getProfile().then(profile => {
+                window.userId = profile.userId;
+                window.displayName = profile.displayName;
+              });
+            }
+          })
+          .catch(err => {
+            console.error("LIFF Initialization failed", err);
+          });
+      };
+
+      // จองที่นั่ง
+      window.bookSeats = async () => {
+        if (selected.size === 0) {
+          alert("กรุณาเลือกที่นั่งก่อน");
+          return;
+        }
+
+        const today = new Date().toISOString().split('T')[0];  // วันที่ที่เลือก
+        const now = new Date();
+        const batch = writeBatch(db);
+
+        // จองที่นั่งที่เลือก
+        for (const id of selected) {
+          const ref = doc(db, "restaurants", restaurantId, "dates", today, "tables", id);
+          batch.set(ref, {
+            status: "reserved",
+            reservedBy: {
+              displayName: window.displayName,
+              userId: window.userId
+            },
+            timestamp: now,
+            bookingDate: today
+          }, { merge: true });
+        }
+
+        try {
+          await batch.commit();
+          alert("✅ การจองสำเร็จ");
+
+          // ส่งข้อมูลการจองไปยัง LINE
           const flexMessage = {
-  type: "flex",
-  altText: "📌 ยืนยันการจองโต๊ะ",
-  contents: {
-    type: "bubble",
-    styles: {
-      header: {
-        backgroundColor: "#000000"
-      },
-      body: {
-        backgroundColor: "#111111"
-      }
-    },
-    header: {
-      type: "box",
-      layout: "vertical",
-      contents: [{
-        type: "text",
-        text: "📌 ร้าน All In",
-        weight: "bold",
-        size: "lg",
-        color: "#facc15"
-      }]
-    },
-    body: {
-      type: "box",
-      layout: "vertical",
-      spacing: "sm",
-      contents: [
-        {
-  type: "text",
-  text: `คุณ ${window.displayName} ได้จองโต๊ะ`,
-  weight: "bold",
-  size: "md",
-  color: "#ffffff"
-},
-{
-  type: "text",
-  text: `ที่นั่ง: ${Array.from(selected).join(", ")}`,
-  size: "sm",
-  wrap: true,
-  color: "#d4d4d4"
-},
-{
-  type: "text",
-  text: `รวมทั้งหมด: ${selected.size * pricePerSeat} บาท`,
-  size: "sm",
-  weight: "bold",
-  color: "#10b981"
-}
-      ]
-    }
-  }
-};
-
+            type: "flex",
+            altText: "📌 ยืนยันการจองโต๊ะ",
+            contents: {
+              type: "bubble",
+              styles: {
+                header: {
+                  backgroundColor: "#000000"
+                },
+                body: {
+                  backgroundColor: "#111111"
+                }
+              },
+              header: {
+                type: "box",
+                layout: "vertical",
+                contents: [{
+                  type: "text",
+                  text: "📌 ร้าน All In",
+                  weight: "bold",
+                  size: "lg",
+                  color: "#facc15"
+                }]
+              },
+              body: {
+                type: "box",
+                layout: "vertical",
+                spacing: "sm",
+                contents: [
+                  {
+                    type: "text",
+                    text: `คุณ ${window.displayName} ได้จองโต๊ะ`,
+                    weight: "bold",
+                    size: "md",
+                    color: "#ffffff"
+                  },
+                  {
+                    type: "text",
+                    text: `ที่นั่ง: ${Array.from(selected).join(", ")}`,
+                    size: "sm",
+                    wrap: true,
+                    color: "#d4d4d4"
+                  },
+                  {
+                    type: "text",
+                    text: `รวมทั้งหมด: ${selected.size * pricePerSeat} บาท`,
+                    size: "sm",
+                    weight: "bold",
+                    color: "#10b981"
+                  }
+                ]
+              }
+            }
+          };
 
           // ส่ง Flex Message ไปยัง LINE
           liff.sendMessages([flexMessage]);
-        })
-        .then(() => {
-          alert("✅ ส่งข้อมูลจองเรียบร้อยแล้ว");
-          liff.closeWindow();  // ปิดหน้าต่าง LIFF
-        })
-        .catch(err => {
-          console.error("Send message error:", err);
-          alert("❌ ส่งข้อความไม่สำเร็จ");
-        });
-    };
+
+          // ปิดหน้าต่าง LIFF
+          liff.closeWindow();
+        } catch (error) {
+          console.error("Error committing batch:", error);
+          alert("❌ เกิดข้อผิดพลาดขณะจองที่นั่ง");
+        }
+      };
+    });
+
   </script>
 
   <style>
@@ -450,8 +442,13 @@ function updateButtonTotal() {
   </style>
 </head>
 <body>
-  <h1  class="restaurant-name"></h1>
+  <!-- ช่องเลือกวันที่ -->
+<div id="date-picker-container">
+  <label for="date-picker">เลือกวันที่:</label>
+  <input type="date" id="date-picker" max="" />
+</div>
 
+  <h1  class="restaurant-name"></h1>
 
   <div class="layout">
     <div class="stage">STAGE</div>
