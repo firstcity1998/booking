@@ -26,17 +26,67 @@ const pricePerSeat = 50;
 const selected = new Set();
 const seatElements = {};
 
+  // กำหนดค่า tablesRef เป็น global variable
   const tablesRef = collection(db, "restaurants", restaurantId, "dates", dateId, "tables");
 
   document.addEventListener("DOMContentLoaded", () => {
+    const datePicker = document.getElementById("datePicker");
+
+    // เมื่อมีการเปลี่ยนแปลงวันที่
+    datePicker.addEventListener("change", async (event) => {
+      const selectedDate = event.target.value;  // วันที่ที่ผู้ใช้เลือก
+      if (selectedDate) {
+        await updateTablesForDate(selectedDate);  // อัปเดตโต๊ะตามวันที่เลือก
+      }
+    });
+
+    // ฟังก์ชันสำหรับอัปเดตข้อมูลโต๊ะจาก Firestore ตามวันที่
+    async function updateTablesForDate(dateId) {
+      const tablesRef = collection(db, "restaurants", restaurantId, "dates", dateId, "tables");
+      const snapshot = await getDocs(tablesRef);
+      
+      snapshot.forEach(doc => {
+        const id = doc.id;
+        const data = doc.data();
+        const seat = seatElements[id];
+        
+        if (seat) {
+          seat.classList.remove("selected", "reserved");
+          
+          // เพิ่มสถานะต่างๆ ตามข้อมูลจาก Firestore
+          if (data.status === "reserved") {
+            seat.classList.add("reserved");
+            seat.onclick = null;
+          } else if (data.status === "blocked") {
+            seat.classList.add("reserved");
+            seat.textContent = "❌";
+            seat.onclick = null;
+          } else {
+            seat.onclick = () => {
+              seat.classList.toggle("selected");
+              if (selected.has(id)) {
+                selected.delete(id);
+              } else {
+                selected.add(id);
+              }
+              updateButtonTotal();
+            };
+          }
+        }
+      });
+    }
+
+    // เริ่มต้นให้ปฏิทินแสดงวันที่ปัจจุบัน
+    const today = new Date().toISOString().split('T')[0];
+    datePicker.value = today;
+
+    // เรียกฟังก์ชันเพื่ออัปเดตโต๊ะตามวันที่ปัจจุบัน
+    updateTablesForDate(today);
     // 1️⃣ Map โต๊ะทั้งหมด
     document.querySelectorAll(".table").forEach(el => {
       const id = el.dataset.table;
       seatElements[id] = el;
     });
-
-    // 2️⃣ รอ DOM แล้วค่อยเชื่อม Firestore
-    const tablesRef = collection(db, "restaurants", restaurantId, "tables");
 
     // 2️⃣ Firestore snapshot
   onSnapshot(tablesRef, snapshot => {
@@ -104,8 +154,9 @@ function updateButtonTotal() {
     displayName: window.displayName,
     userId: window.userId
   },
-  timestamp: now
-}, { merge: true }); // ✅ จะสร้าง doc ถ้าไม่เจอ
+  timestamp: now,
+  bookingDate: now.toISOString().split('T')[0]  // แค่วันที่ (ไม่มีเวลา)
+}, { merge: true });  // ✅ จะสร้าง doc ถ้าไม่เจอ
 
     reservedSeats++;
   }
@@ -122,6 +173,11 @@ function updateButtonTotal() {
 
     // ✅ LIFF init
     window.onload = function () {
+       const today = new Date().toISOString().split('T')[0];
+    document.getElementById("datePicker").value = today;
+
+    // เริ่มต้นดึงข้อมูลโต๊ะจาก Firestore ตามวันที่ปัจจุบัน
+    updateTablesForDate(today);
       liff.init({ liffId: "2007619597-pL1yYoj3" }) // ใส่ LIFF ID จริง
         .then(() => {
           if (!liff.isLoggedIn()) {
@@ -453,6 +509,11 @@ function updateButtonTotal() {
 <body>
   <h1  class="restaurant-name"></h1>
 
+  <!-- 📅 ปฏิทินเลือกวัน -->
+  <div style="margin: 10px; text-align: center;">
+    <label for="datePicker" style="color: white; font-weight: bold;">เลือกวันที่: </label>
+    <input type="date" id="datePicker" style="padding: 6px; border-radius: 6px;">
+  </div>
 
   <div class="layout">
     <div class="stage">STAGE</div>
