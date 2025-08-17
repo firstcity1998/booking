@@ -21,7 +21,7 @@
   const db = getFirestore(app);
 
   const restaurantId = "all-in";
-const bookingDate = new Date(selectedDate).toISOString().split('T')[0]; 
+const today = new Date().toISOString().split("T")[0];
 const pricePerSeat = 50;
 const selected = new Set();
 const seatElements = {};
