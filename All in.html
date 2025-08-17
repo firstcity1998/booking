@@ -21,13 +21,28 @@
   const db = getFirestore(app);
 
   const restaurantId = "all-in";
-const dateId = "2025-08-17";  // วันที่ที่คุณกำหนด
+const bookingDate = new Date(selectedDate).toISOString().split('T')[0]; 
 const pricePerSeat = 50;
 const selected = new Set();
 const seatElements = {};
 
   // กำหนดค่า tablesRef เป็น global variable
   const tablesRef = collection(db, "restaurants", restaurantId, "dates", dateId, "tables");
+  tableRef.set({
+  status: "reserved",
+  reservedBy: {
+    displayName: window.displayName,
+    userId: window.userId
+  },
+  timestamp: new Date(),
+  bookingDate: bookingDate  // ใช้ bookingDate ที่แปลงแล้ว
+}, { merge: true })
+  .then(() => {
+    console.log("Table reserved successfully!");
+  })
+  .catch((error) => {
+    console.error("Error reserving table: ", error);
+  });
 
   document.addEventListener("DOMContentLoaded", () => {
     const datePicker = document.getElementById("datePicker");
@@ -155,7 +170,7 @@ function updateButtonTotal() {
     userId: window.userId
   },
   timestamp: now,
-  bookingDate: now.toISOString().split('T')[0]  // แค่วันที่ (ไม่มีเวลา)
+  bookingDate: bookingDate // ใช้ bookingDate ที่ได้จากการเลือกในปฏิทิน
 }, { merge: true });  // ✅ จะสร้าง doc ถ้าไม่เจอ
 
     reservedSeats++;
