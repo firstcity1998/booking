@@ -31,14 +31,15 @@ const seatElements = {};
 
   document.addEventListener("DOMContentLoaded", () => {
     const datePicker = document.getElementById("datePicker");
+    let bookingDate = new Date().toISOString().split('T')[0];  // กำหนดวันที่ปัจจุบันเป็น bookingDate เริ่มต้น
 
-    // เมื่อมีการเปลี่ยนแปลงวันที่
-    datePicker.addEventListener("change", async (event) => {
-      const selectedDate = event.target.value;  // วันที่ที่ผู้ใช้เลือก
-      if (selectedDate) {
-        await updateTablesForDate(selectedDate);  // อัปเดตโต๊ะตามวันที่เลือก
-      }
-    });
+     // เมื่อมีการเปลี่ยนแปลงวันที่จากปฏิทิน
+  datePicker.addEventListener("change", async (event) => {
+    bookingDate = event.target.value;  // อัปเดตวันที่ที่ผู้ใช้เลือก
+    if (bookingDate) {
+      await updateTablesForDate(bookingDate);  // อัปเดตโต๊ะตามวันที่เลือก
+    }
+  });
 
     // ฟังก์ชันสำหรับอัปเดตข้อมูลโต๊ะจาก Firestore ตามวันที่
     async function updateTablesForDate(dateId) {
@@ -53,28 +54,28 @@ const seatElements = {};
         if (seat) {
           seat.classList.remove("selected", "reserved");
           
-          // เพิ่มสถานะต่างๆ ตามข้อมูลจาก Firestore
-          if (data.status === "reserved") {
-            seat.classList.add("reserved");
-            seat.onclick = null;
-          } else if (data.status === "blocked") {
-            seat.classList.add("reserved");
-            seat.textContent = "❌";
-            seat.onclick = null;
-          } else {
-            seat.onclick = () => {
-              seat.classList.toggle("selected");
-              if (selected.has(id)) {
-                selected.delete(id);
-              } else {
-                selected.add(id);
-              }
-              updateButtonTotal();
-            };
-          }
+         // เพิ่มสถานะต่างๆ ตามข้อมูลจาก Firestore
+        if (data.status === "reserved") {
+          seat.classList.add("reserved");
+          seat.onclick = null;
+        } else if (data.status === "blocked") {
+          seat.classList.add("reserved");
+          seat.textContent = "❌";
+          seat.onclick = null;
+        } else {
+          seat.onclick = () => {
+            seat.classList.toggle("selected");
+            if (selected.has(id)) {
+              selected.delete(id);
+            } else {
+              selected.add(id);
+            }
+            updateButtonTotal();  // ✅ เพิ่มตรงนี้แทน document.getElementById("total") ที่ใช้ไม่ได้
+          };
         }
-      });
-    }
+      }
+    });
+  }
 
     // เริ่มต้นให้ปฏิทินแสดงวันที่ปัจจุบัน
     const today = new Date().toISOString().split('T')[0];
@@ -96,29 +97,29 @@ const seatElements = {};
       const seat = seatElements[id];
       if (!seat) return;
 
-seat.classList.remove("selected", "reserved");
+      seat.classList.remove("selected", "reserved");
 
-if (data.status === "reserved") {
-  seat.classList.add("reserved");
-  seat.onclick = null;
-} else if (data.status === "blocked") {
-  seat.classList.add("reserved");
-  seat.textContent = "❌";
-  seat.onclick = null;
-} else {
-  seat.onclick = () => {
-  seat.classList.toggle("selected");
-  if (selected.has(id)) {
-    selected.delete(id);
-  } else {
-    selected.add(id);
-  }
-  updateButtonTotal();  // ✅ เพิ่มตรงนี้แทน document.getElementById("total") ที่ใช้ไม่ได้
-};
-}
-      });
+      if (data.status === "reserved") {
+        seat.classList.add("reserved");
+        seat.onclick = null;
+      } else if (data.status === "blocked") {
+        seat.classList.add("reserved");
+        seat.textContent = "❌";
+        seat.onclick = null;
+      } else {
+        seat.onclick = () => {
+          seat.classList.toggle("selected");
+          if (selected.has(id)) {
+            selected.delete(id);
+          } else {
+            selected.add(id);
+          }
+          updateButtonTotal();  // ✅ เพิ่มตรงนี้แทน document.getElementById("total") ที่ใช้ไม่ได้
+        };
+      }
     });
   });
+});
 function updateButtonTotal() {
   const total = selected.size * pricePerSeat;
   const btn = document.getElementById("confirmBtn");
