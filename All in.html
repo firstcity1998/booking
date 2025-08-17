@@ -21,7 +21,7 @@
   const db = getFirestore(app);
 
   const restaurantId = "all-in";
-const dateId = "2025-08-17";  // วันที่ที่คุณกำหนด
+let dateId = "";  // เปลี่ยนเป็นตัวแปรที่สามารถอัปเดตได้
 const pricePerSeat = 50;
 const selected = new Set();
 const seatElements = {};
@@ -496,6 +496,63 @@ function updateButtonTotal() {
 </div>
 
 
+<script type="module">
+document.addEventListener("DOMContentLoaded", () => {
+  // 1️⃣ Map โต๊ะทั้งหมด
+  document.querySelectorAll(".table").forEach(el => {
+    const id = el.dataset.table;
+    seatElements[id] = el;
+  });
+
+  // 2️⃣ ฟังก์ชันโหลดโต๊ะจาก Firestore ตามวันที่ที่เลือก
+  function loadTablesForDate(dateId) {
+    const tablesForDateRef = collection(db, "restaurants", restaurantId, "dates", dateId, "tables");
+
+    onSnapshot(tablesForDateRef, snapshot => {
+      snapshot.docChanges().forEach(change => {
+        const id = change.doc.id;
+        const data = change.doc.data();
+        const seat = seatElements[id];
+        if (!seat) return;
+
+        seat.classList.remove("selected", "reserved");
+
+        if (data.status === "reserved") {
+          seat.classList.add("reserved");
+          seat.onclick = null;
+        } else if (data.status === "blocked") {
+          seat.classList.add("reserved");
+          seat.textContent = "❌";
+          seat.onclick = null;
+        } else {
+          seat.onclick = () => {
+            seat.classList.toggle("selected");
+            if (selected.has(id)) {
+              selected.delete(id);
+            } else {
+              selected.add(id);
+            }
+            updateButtonTotal();  // อัปเดตจำนวนเงิน
+          };
+        }
+      });
+    });
+  }
+
+  // เมื่อมีการเลือกวันที่จากปฏิทิน
+  document.getElementById('datePicker').addEventListener('change', (e) => {
+    const selectedDate = e.target.value;
+    dateId = selectedDate; // กำหนด dateId จากวันที่ที่ผู้ใช้เลือก
+    loadTablesForDate(dateId); // เรียกใช้งานโหลดโต๊ะ
+  });
+
+  // เริ่มต้นโหลดข้อมูลโต๊ะเมื่อโหลดหน้า
+  if (dateId) {
+    loadTablesForDate(dateId); // เรียกใช้งานโหลดโต๊ะในวันที่เริ่มต้น
+  }
+});
+
+</script>
 
 
 </body>
