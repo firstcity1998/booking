@@ -98,14 +98,15 @@ function updateButtonTotal() {
       // ✅ ใช้ path ใหม่เวลาจอง
   for (const id of selected) {
     const ref = doc(db, "restaurants", restaurantId, "dates", dateId, "tables", id);
-    batch.update(ref, { 
-      status: "reserved",
-      reservedBy: {
-        displayName: window.displayName,
-        userId: window.userId
-      },
-      timestamp: now
-    });
+    batch.set(ref, { 
+  status: "reserved",
+  reservedBy: {
+    displayName: window.displayName,
+    userId: window.userId
+  },
+  timestamp: now
+}, { merge: true }); // ✅ จะสร้าง doc ถ้าไม่เจอ
+
     reservedSeats++;
   }
 
