@@ -21,7 +21,7 @@
   const db = getFirestore(app);
 
   const restaurantId = "all-in";
-const dateId = "2025-08-18";  // วันที่ที่คุณกำหนด
+const dateId = "2025-08-17";  // วันที่ที่คุณกำหนด
 const pricePerSeat = 50;
 const selected = new Set();
 const seatElements = {};
@@ -155,7 +155,7 @@ function updateButtonTotal() {
     userId: window.userId
   },
   timestamp: now,
-  bookingDate: bookingDate // ใช้ bookingDate ที่ได้จากการเลือกในปฏิทิน
+  bookingDate: now.toISOString().split('T')[0]  // แค่วันที่ (ไม่มีเวลา)
 }, { merge: true });  // ✅ จะสร้าง doc ถ้าไม่เจอ
 
     reservedSeats++;
