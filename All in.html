@@ -133,22 +133,20 @@ function updateButtonTotal() {
       reservedSeats++;
     }
 
-  console.log("→ Batch commit starting...");
-  await batch.commit();
-  console.log("→ Batch commit success");
+    console.log("→ Batch commit starting...");
+    await batch.commit();
+    console.log("✅ Batch commit success");
 
-  selected.clear();
-  updateButtonTotal();
-  // อยากรอด calm เพิ่มก่อน reload:
-  console.log("→ Reloading page now...");
-  location.reload();
-} catch (error) {
-  console.error("→ Error committing batch:", error);
-  alert("❌ เกิดข้อผิดพลาดขณะจองที่นั่ง");
-  throw error;
-}
+    selected.clear();
+    updateButtonTotal();
 
+  } catch (error) {
+    console.error("❌ Error committing batch:", error);
+    alert("❌ เกิดข้อผิดพลาดขณะจองที่นั่ง");
+    throw error;
+  }
 };
+
 
 
     // ✅ LIFF init
@@ -169,7 +167,6 @@ function updateButtonTotal() {
         });
     };
 
-    // ฟังก์ชัน bookSeats ต้องอยู่ในสโคปนี้
     window.bookSeats = function () {
   if (selected.size === 0) {
     alert("กรุณาเลือกที่นั่งก่อน");
@@ -181,18 +178,16 @@ function updateButtonTotal() {
 
   window.reserveSeats(window.userId)
     .then(() => {
+      console.log("→ reserveSeats succeeded");
+
       const flexMessage = {
         type: "flex",
         altText: "📌 ยืนยันการจองโต๊ะ",
         contents: {
           type: "bubble",
           styles: {
-            header: {
-              backgroundColor: "#000000"
-            },
-            body: {
-              backgroundColor: "#111111"
-            }
+            header: { backgroundColor: "#000000" },
+            body: { backgroundColor: "#111111" }
           },
           header: {
             type: "box",
@@ -241,12 +236,14 @@ function updateButtonTotal() {
     .then(() => {
       alert("✅ ส่งข้อมูลจองเรียบร้อยแล้ว");
       liff.closeWindow();
+      location.reload(); // ✅ รีโหลดหลังจากส่ง message แล้ว
     })
     .catch(err => {
-      console.error("❌ Send message error:", err);
-      alert("❌ ส่งข้อความไม่สำเร็จ");
+      console.error("❌ Booking flow error:", err);
+      alert("❌ ส่งข้อความไม่สำเร็จ: " + (err.message || err));
     });
 };
+
 
   </script>
 
