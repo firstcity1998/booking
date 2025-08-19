@@ -21,7 +21,7 @@
   const db = getFirestore(app);
 
 const restaurantId = "all-in";
-const pricePerSeat = 50;
+const pricePerSeat = 0;
 const selected = new Set();
 const seatElements = {};
 
@@ -476,16 +476,96 @@ function updateButtonTotal() {
   #confirmBtn:hover {
     background-color: #059669;
   }
+
+  /* กล่องปฏิทิน */
+#datePicker {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 2px solid #facc15;   /* เส้นขอบสีทอง */
+  background: #111;             /* พื้นหลังดำ */
+  color: #facc15;               /* ตัวอักษรสีทอง */
+  font-size: 16px;
+  font-weight: bold;
+  outline: none;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+/* เวลา hover */
+#datePicker:hover {
+  border-color: #ffdd33;
+  background: #1c1c1c;
+  box-shadow: 0 0 8px rgba(250, 204, 21, 0.5);
+}
+
+/* เวลา focus */
+#datePicker:focus {
+  border-color: #ffcc00;
+  box-shadow: 0 0 12px rgba(250, 204, 21, 0.8);
+}
+
+/* ปรับป้าย label ให้เข้าธีม */
+label[for="datePicker"] {
+  color: #facc15;
+  font-weight: bold;
+  font-size: 16px;
+  margin-right: 8px;
+}
+/* กล่องปฏิทิน */
+.calendar-container {
+  position: absolute;
+  top: 10px;           /* ระยะห่างจากบน */
+  left: 50%;           /* จัดให้อยู่กลาง */
+  transform: translateX(-50%);  /* ดึงให้ center พอดี */
+  background: rgba(0, 0, 0, 0.6);
+  padding: 8px 14px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  z-index: 20;         /* ลอยอยู่เหนือ layout */
+}
+
+/* label */
+.calendar-container label {
+  color: #facc15;
+  font-weight: bold;
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+/* input date */
+#datePicker {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 2px solid #facc15;
+  background: #111;
+  color: #facc15;
+  font-size: 15px;
+  font-weight: bold;
+  outline: none;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+#datePicker:hover {
+  background: #1c1c1c;
+  box-shadow: 0 0 8px rgba(250, 204, 21, 0.4);
+}
+
+
   </style>
 </head>
 <body>
   <h1  class="restaurant-name"></h1>
 
-  <!-- 📅 ปฏิทินเลือกวัน -->
-  <div style="margin: 10px; text-align: center;">
-    <label for="datePicker" style="color: white; font-weight: bold;">เลือกวันที่: </label>
-    <input type="date" id="datePicker" style="padding: 6px; border-radius: 6px;">
-  </div>
+<!-- 📅 ปฏิทินเลือกวัน -->
+<div class="calendar-container">
+  <label for="datePicker">📅 เลือกวันที่:</label>
+  <input type="date" id="datePicker">
+</div>
+
 
   <div class="layout">
     <div class="stage">STAGE</div>
