@@ -132,13 +132,18 @@ function updateButtonTotal() {
   }
 
   try {
-    await batch.commit();
-    console.log(`${reservedSeats} seats reserved successfully!`);
-    updateButtonTotal();
-  } catch (error) {
-    console.error("Error committing batch:", error);
-    alert("❌ เกิดข้อผิดพลาดขณะจองที่นั่ง");
-  }
+  await batch.commit();
+
+  // ✅ เพิ่มบรรทัดเหล่านี้
+  selected.clear();             // เคลียร์โต๊ะที่เลือก
+  updateButtonTotal();          // อัปเดตราคาบนปุ่ม
+  location.reload();            // รีโหลดเพื่อโหลด snapshot ใหม่ (optional)
+
+  console.log(`${reservedSeats} seats reserved successfully!`);
+} catch (error) {
+  console.error("Error committing batch:", error);
+  alert("❌ เกิดข้อผิดพลาดขณะจองที่นั่ง");
+}
 };
 
     // ✅ LIFF init
