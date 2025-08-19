@@ -107,47 +107,47 @@ function updateButtonTotal() {
 }
 
     window.reserveSeats = async (userId) => {
-      if (selected.size === 0) {
-        alert("กรุณาเลือกที่นั่งก่อน");
-        return;  // ถ้ายังไม่ได้เลือกที่นั่ง
-      }
+  if (selected.size === 0) {
+    alert("กรุณาเลือกที่นั่งก่อน");
+    return;
+  }
 
-      const now = new Date();
-      const batch = writeBatch(db);  // สร้าง batch ใหม่สำหรับการอัปเดตหลายๆ โต๊ะ
-      let reservedSeats = 0;  // ตัวนับที่นั่งที่จองแล้ว
-
-      // ✅ ใช้ path ใหม่เวลาจอง
-  for (const id of selected) {
-  const ref = doc(db, "restaurants", restaurantId, "dates", dateId, "tables", id);
-  
-  batch.set(ref, { 
-    status: "reserved",
-    reservedBy: {
-      displayName: window.displayName,
-      userId: window.userId
-    },
-    timestamp: now,
-    bookingDate: dateId  // ✅ อยู่ใน object
-  }, { merge: true }); // ✅ merge = true จะไม่ลบ field อื่น
-
-  reservedSeats++;  // ✅ อยู่นอก object
-}
-
+  const now = new Date();
+  const batch = writeBatch(db);
+  let reservedSeats = 0;
 
   try {
-  await batch.commit();
+    for (const id of selected) {
+      const ref = doc(db, "restaurants", restaurantId, "dates", dateId, "tables", id);
 
-  // ✅ เพิ่มบรรทัดเหล่านี้
-  selected.clear();             // เคลียร์โต๊ะที่เลือก
-  updateButtonTotal();          // อัปเดตราคาบนปุ่ม
-  location.reload();            // รีโหลดเพื่อโหลด snapshot ใหม่ (optional)
+      batch.set(ref, {
+        status: "reserved",
+        reservedBy: {
+          displayName: window.displayName,
+          userId: window.userId
+        },
+        timestamp: now,
+        bookingDate: dateId
+      }, { merge: true });
 
-  console.log(`${reservedSeats} seats reserved successfully!`);
-} catch (error) {
-  console.error("Error committing batch:", error);
-  alert("❌ เกิดข้อผิดพลาดขณะจองที่นั่ง");
-}
+      reservedSeats++;
+    }
+
+    console.log("🟢 กำลัง commit batch...");
+    await batch.commit();
+    console.log(`✅ จองที่นั่ง ${reservedSeats} ที่เสร็จเรียบร้อย`);
+
+    selected.clear();
+    updateButtonTotal();
+    location.reload();
+
+  } catch (error) {
+    console.error("❌ Error committing batch:", error);
+    alert("❌ เกิดข้อผิดพลาดขณะจองที่นั่ง");
+    throw error; // 👉 สำคัญ เพื่อให้ .catch ใน bookSeats ทำงาน
+  }
 };
+
 
     // ✅ LIFF init
     window.onload = function () {
