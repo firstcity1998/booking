@@ -38,16 +38,29 @@ function getDateFromURL() {
 
 const dateId = getDateFromURL();
 
+document.addEventListener("DOMContentLoaded", () => {
+  const datePicker = document.getElementById("datePicker");
 
-  const tablesRef = collection(db, "restaurants", restaurantId, "dates", dateId, "tables");
+  // ✅ กำหนดค่าเริ่มต้น
+  datePicker.value = dateId;
 
-  document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("datePicker").value = dateId;
+  // ✅ จำกัดวัน (วันนี้ → อีก 6 วัน รวมทั้งหมด 7 วัน)
+  const today = new Date();
+  const minDate = today.toISOString().split("T")[0];
+  const maxDateObj = new Date(today);
+  maxDateObj.setDate(today.getDate() + 6);
+  const maxDate = maxDateObj.toISOString().split("T")[0];
 
-    document.getElementById("datePicker").addEventListener("change", function (e) {
-  const selectedDate = e.target.value;
-  window.location.href = `?date=${selectedDate}`;
+  datePicker.min = minDate;
+  datePicker.max = maxDate;
+
+  // ✅ เมื่อเปลี่ยนวัน → reload พร้อม query
+  datePicker.addEventListener("change", function (e) {
+    const selectedDate = e.target.value;
+    window.location.href = `?date=${selectedDate}`;
+  });
 });
+
 
 
     // 1️⃣ Map โต๊ะทั้งหมด
@@ -89,7 +102,7 @@ if (data.status === "reserved") {
 }
       });
     });
-  });
+  
 function updateButtonTotal() {
   const total = selected.size * pricePerSeat;
   const btn = document.getElementById("confirmBtn");
