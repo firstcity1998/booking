@@ -20,15 +20,36 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  const restaurantId = "all-in";
-const dateId = "2025-08-17";  // วันที่ที่คุณกำหนด
+const restaurantId = "all-in";
 const pricePerSeat = 50;
 const selected = new Set();
 const seatElements = {};
 
+function getDateFromURL() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const date = urlParams.get('date');
+  if (date) {
+    return date;
+  } else {
+    const today = new Date().toISOString().split('T')[0];
+    return today;
+  }
+}
+
+const dateId = getDateFromURL();
+
+
   const tablesRef = collection(db, "restaurants", restaurantId, "dates", dateId, "tables");
 
   document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("datePicker").value = dateId;
+
+    document.getElementById("datePicker").addEventListener("change", function (e) {
+  const selectedDate = e.target.value;
+  window.location.href = `?date=${selectedDate}`;
+});
+
+
     // 1️⃣ Map โต๊ะทั้งหมด
     document.querySelectorAll(".table").forEach(el => {
       const id = el.dataset.table;
@@ -36,7 +57,7 @@ const seatElements = {};
     });
 
     // 2️⃣ รอ DOM แล้วค่อยเชื่อม Firestore
-    const tablesRef = collection(db, "restaurants", restaurantId, "tables");
+    const tablesRef = collection(db, "restaurants", restaurantId, "dates", dateId, "tables");
 
     // 2️⃣ Firestore snapshot
   onSnapshot(tablesRef, snapshot => {
