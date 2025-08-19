@@ -28,130 +28,211 @@
     const selected = new Set();
     const seatElements = {};
 
+    function getDateFromURL() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const date = urlParams.get('date');
+  if (date) {
+    return date;
+  } else {
+    const today = new Date().toISOString().split('T')[0];
+    return today;
+  }
+}
+  const dateId = getDateFromURL();
+  const tablesRef = collection(db, "restaurants", restaurantId, "dates", dateId, "tables");
     document.addEventListener("DOMContentLoaded", () => {
-      document.querySelectorAll(".table").forEach(el => {
-  const id = el.dataset.table;
-  seatElements[id] = el;
+    document.getElementById("datePicker").value = dateId;
+
+    document.getElementById("datePicker").addEventListener("change", function (e) {
+  const selectedDate = e.target.value;
+  window.location.href = `?date=${selectedDate}`;
 });
+//  DOM แล้วค่อยเชื่อม Firestore
+    const tablesRef = collection(db, "restaurants", restaurantId, "dates", dateId, "tables");
+      
+    onSnapshot(tablesRef, snapshot => {
+    snapshot.docChanges().forEach(change => {
+      const id = change.doc.id;
+      const data = change.doc.data();
+      const seat = seatElements[id];
+      if (!seat) return;
 
+seat.classList.remove("selected", "reserved");
 
-      const tablesRef = collection(db, "restaurants", restaurantId, "tables");
-      onSnapshot(tablesRef, snapshot => {
-        snapshot.docChanges().forEach(change => {
-          const id = change.doc.id;
-          const data = change.doc.data();
-          const seat = seatElements[id];
-          if (!seat) return;
-
-          seat.classList.remove("selected", "reserved");
-
-          if (data.status === "reserved" || data.status === "blocked") {
-            seat.classList.add("reserved");
-            seat.textContent = data.status === "blocked" ? "❌" : id;
-            seat.onclick = null;
-          } else {
-            seat.textContent = id;
-            seat.onclick = () => {
-              seat.classList.toggle("selected");
-              if (selected.has(id)) selected.delete(id);
-              else selected.add(id);
-              updateButtonTotal();
-            };
-          }
-        });
+if (data.status === "reserved") {
+  seat.classList.add("reserved");
+  seat.onclick = null;
+} else if (data.status === "blocked") {
+  seat.classList.add("reserved");
+  seat.textContent = "❌";
+  seat.onclick = null;
+} else {
+  seat.onclick = () => {
+  seat.classList.toggle("selected");
+  if (selected.has(id)) {
+    selected.delete(id);
+  } else {
+    selected.add(id);
+  }
+  updateButtonTotal();  // ✅ เพิ่มตรงนี้แทน document.getElementById("total") ที่ใช้ไม่ได้
+};
+}
       });
     });
+  });
 
     function updateButtonTotal() {
-      const total = selected.size * pricePerSeat;
-      const btn = document.getElementById("confirmBtn");
-      btn.textContent = `จองเลย (${total} บาท)`;
-      btn.disabled = selected.size === 0;
-      btn.style.backgroundColor = btn.disabled ? "#9ca3af" : "#10b981";
-      btn.style.cursor = btn.disabled ? "not-allowed" : "pointer";
-    }
+  const total = selected.size * pricePerSeat;
+  const btn = document.getElementById("confirmBtn");
+  btn.textContent = `จองเลย (${total} บาท)`;
+  btn.disabled = selected.size === 0;
+
+  // เพิ่ม style ตอน disabled (ถ้าต้องการ)
+  if (btn.disabled) {
+    btn.style.backgroundColor = "#9ca3af";
+    btn.style.cursor = "not-allowed";
+  } else {
+    btn.style.backgroundColor = "#10b981";
+    btn.style.cursor = "pointer";
+  }
+}
 
     window.reserveSeats = async (userId) => {
-      if (selected.size === 0) return;
-      const now = new Date();
-      const batch = writeBatch(db);
+  if (selected.size === 0) {
+    alert("กรุณาเลือกที่นั่งก่อน");
+    return;
+  }
 
-      for (const id of selected) {
-        const ref = doc(db, "restaurants", restaurantId, "tables", id);
-        batch.update(ref, {
-          status: "reserved",
-          reservedBy: { displayName: window.displayName, userId: window.userId },
-          timestamp: now
-        });
-      }
+  const now = new Date();
+  const batch = writeBatch(db);
+  let reservedSeats = 0;
 
-      try {
-        await batch.commit();
-        updateButtonTotal();
-      } catch (err) {
-        alert("❌ เกิดข้อผิดพลาดขณะจองที่นั่ง");
-        console.error(err);
-      }
-    };
+  try {
+    for (const id of selected) {
+      const ref = doc(db, "restaurants", restaurantId, "dates", dateId, "tables", id);
 
+      batch.set(ref, {
+        status: "reserved",
+        reservedBy: {
+          displayName: window.displayName,
+          userId: window.userId
+        },
+        timestamp: now,
+        bookingDate: dateId
+      }, { merge: true });
+
+      reservedSeats++;
+    }
+
+    console.log("→ Batch commit starting...");
+    await batch.commit();
+    console.log("✅ Batch commit success");
+
+    selected.clear();
+    updateButtonTotal();
+
+  } catch (error) {
+    console.error("❌ Error committing batch:", error);
+    alert("❌ เกิดข้อผิดพลาดขณะจองที่นั่ง");
+    throw error;
+  }
+};
+
+    
+    // ✅ LIFF init
     window.onload = function () {
-      liff.init({ liffId: "2007619597-pL1yYoj3" })
+      liff.init({ liffId: "2007619597-pL1yYoj3" }) // ใส่ LIFF ID จริง
         .then(() => {
-          if (!liff.isLoggedIn()) liff.login();
-          else {
+          if (!liff.isLoggedIn()) {
+            liff.login();
+          } else {
             liff.getProfile().then(profile => {
               window.userId = profile.userId;
               window.displayName = profile.displayName;
             });
           }
-        }).catch(console.error);
+        })
+        .catch(err => {
+          console.error("LIFF Initialization failed", err);
+        });
     };
 
     window.bookSeats = function () {
-      if (selected.size === 0) {
-        alert("กรุณาเลือกที่นั่งก่อน");
-        return;
-      }
+  if (selected.size === 0) {
+    alert("กรุณาเลือกที่นั่งก่อน");
+    return;
+  }
 
-      window.reserveSeats(window.userId).then(() => {
-        const flexMessage = {
-          type: "flex",
-          altText: "📌 ยืนยันการจองโต๊ะ",
-          contents: {
-            type: "bubble",
-            styles: {
-              header: { backgroundColor: "#000000" },
-              body: { backgroundColor: "#111111" }
-            },
-            header: {
-              type: "box",
-              layout: "vertical",
-              contents: [{ type: "text", text: "📌 ร้าน Fuel", weight: "bold", size: "lg", color: "#facc15" }]
-            },
-            body: {
-              type: "box",
-              layout: "vertical",
-              spacing: "sm",
-              contents: [
-                { type: "text", text: `คุณ ${window.displayName} ได้จองโต๊ะ`, weight: "bold", size: "md", color: "#ffffff" },
-                { type: "text", text: `ที่นั่ง: ${Array.from(selected).join(", ")}`, size: "sm", wrap: true, color: "#d4d4d4" },
-                { type: "text", text: `รวมทั้งหมด: ${selected.size * pricePerSeat} บาท`, size: "sm", weight: "bold", color: "#10b981" }
-              ]
-            }
+  const selectedSeats = Array.from(selected);
+  const totalPrice = selectedSeats.length * pricePerSeat;
+
+  window.reserveSeats(window.userId)
+    .then(() => {
+      console.log("→ reserveSeats succeeded");
+
+      const flexMessage = {
+        type: "flex",
+        altText: "📌 ยืนยันการจองโต๊ะ",
+        contents: {
+          type: "bubble",
+          styles: {
+            header: { backgroundColor: "#000000" },
+            body: { backgroundColor: "#111111" }
+          },
+          header: {
+            type: "box",
+            layout: "vertical",
+            contents: [{
+              type: "text",
+              text: "📌 ร้าน Fuel of Life",
+              weight: "bold",
+              size: "lg",
+              color: "#facc15"
+            }]
+          },
+          body: {
+            type: "box",
+            layout: "vertical",
+            spacing: "sm",
+            contents: [
+              {
+                type: "text",
+                text: `คุณ ${window.displayName} ได้จองโต๊ะ`,
+                weight: "bold",
+                size: "md",
+                color: "#ffffff"
+              },
+              {
+                type: "text",
+                text: `ที่นั่ง: ${selectedSeats.join(", ")}`,
+                size: "sm",
+                wrap: true,
+                color: "#d4d4d4"
+              },
+              {
+                type: "text",
+                text: `รวมทั้งหมด: ${totalPrice} บาท`,
+                size: "sm",
+                weight: "bold",
+                color: "#10b981"
+              }
+            ]
           }
-        };
+        }
+      };
 
-        liff.sendMessages([flexMessage])
-          .then(() => {
-            alert("✅ ส่งข้อมูลจองเรียบร้อยแล้ว");
-            liff.closeWindow();
-          })
-          .catch(err => {
-            alert("❌ ส่งข้อความไม่สำเร็จ");
-            console.error(err);
-          });
-      });
-    };
+      return liff.sendMessages([flexMessage]);
+    })
+    .then(() => {
+      alert("✅ ส่งข้อมูลจองเรียบร้อยแล้ว");
+      liff.closeWindow();
+    })
+    .catch(err => {
+      console.error("❌ Booking flow error:", err);
+      alert("❌ ส่งข้อความไม่สำเร็จ: " + (err.message || err));
+    });
+};
+
   </script>
 
   <style>
@@ -334,9 +415,90 @@
     #confirmBtn:hover {
       background-color: #059669;
     }
+    /* กล่องปฏิทิน */
+#datePicker {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 2px solid #facc15;   /* เส้นขอบสีทอง */
+  background: #111;             /* พื้นหลังดำ */
+  color: #facc15;               /* ตัวอักษรสีทอง */
+  font-size: 16px;
+  font-weight: bold;
+  outline: none;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+/* เวลา hover */
+#datePicker:hover {
+  border-color: #ffdd33;
+  background: #1c1c1c;
+  box-shadow: 0 0 8px rgba(250, 204, 21, 0.5);
+}
+
+/* เวลา focus */
+#datePicker:focus {
+  border-color: #ffcc00;
+  box-shadow: 0 0 12px rgba(250, 204, 21, 0.8);
+}
+
+/* ปรับป้าย label ให้เข้าธีม */
+label[for="datePicker"] {
+  color: #facc15;
+  font-weight: bold;
+  font-size: 16px;
+  margin-right: 8px;
+}
+/* กล่องปฏิทิน */
+.calendar-container {
+  position: absolute;
+  top: 10px;           /* ระยะห่างจากบน */
+  left: 50%;           /* จัดให้อยู่กลาง */
+  transform: translateX(-50%);  /* ดึงให้ center พอดี */
+  background: rgba(0, 0, 0, 0.6);
+  padding: 8px 14px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  z-index: 20;         /* ลอยอยู่เหนือ layout */
+}
+
+/* label */
+.calendar-container label {
+  color: #facc15;
+  font-weight: bold;
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+/* input date */
+#datePicker {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 2px solid #facc15;
+  background: #111;
+  color: #facc15;
+  font-size: 15px;
+  font-weight: bold;
+  outline: none;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+#datePicker:hover {
+  background: #1c1c1c;
+  box-shadow: 0 0 8px rgba(250, 204, 21, 0.4);
+}
   </style>
 </head>
 <body>
+  <!-- 📅 ปฏิทินเลือกวัน -->
+<div class="calendar-container">
+  <label for="datePicker">📅 เลือกวันที่:</label>
+  <input type="date" id="datePicker">
+</div>
   <div class="container">
     <div class="stage">STAGE</div>
 
