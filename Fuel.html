@@ -38,15 +38,32 @@
     return today;
   }
 }
-  const dateId = getDateFromURL();
-  const tablesRef = collection(db, "restaurants", restaurantId, "dates", dateId, "tables");
-    document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("datePicker").value = dateId;
 
-    document.getElementById("datePicker").addEventListener("change", function (e) {
-  const selectedDate = e.target.value;
-  window.location.href = `?date=${selectedDate}`;
+const dateId = getDateFromURL();
+
+document.addEventListener("DOMContentLoaded", () => {
+  const datePicker = document.getElementById("datePicker");
+
+  // ✅ กำหนดค่าเริ่มต้น
+  datePicker.value = dateId;
+
+  // ✅ จำกัดวัน (วันนี้ → อีก 6 วัน รวมทั้งหมด 7 วัน)
+  const today = new Date();
+  const minDate = today.toISOString().split("T")[0];
+  const maxDateObj = new Date(today);
+  maxDateObj.setDate(today.getDate() + 6);
+  const maxDate = maxDateObj.toISOString().split("T")[0];
+
+  datePicker.min = minDate;
+  datePicker.max = maxDate;
+
+  // ✅ เมื่อเปลี่ยนวัน → reload พร้อม query
+  datePicker.addEventListener("change", function (e) {
+    const selectedDate = e.target.value;
+    window.location.href = `?date=${selectedDate}`;
+  });
 });
+
 //  DOM แล้วค่อยเชื่อม Firestore
     const tablesRef = collection(db, "restaurants", restaurantId, "dates", dateId, "tables");
       
@@ -79,7 +96,6 @@ if (data.status === "reserved") {
 }
       });
     });
-  });
 
     function updateButtonTotal() {
   const total = selected.size * pricePerSeat;
