@@ -133,19 +133,21 @@ function updateButtonTotal() {
       reservedSeats++;
     }
 
-    console.log("🟢 กำลัง commit batch...");
-    await batch.commit();
-    console.log(`✅ จองที่นั่ง ${reservedSeats} ที่เสร็จเรียบร้อย`);
+  console.log("→ Batch commit starting...");
+  await batch.commit();
+  console.log("→ Batch commit success");
 
-    selected.clear();
-    updateButtonTotal();
-    location.reload();
+  selected.clear();
+  updateButtonTotal();
+  // อยากรอด calm เพิ่มก่อน reload:
+  console.log("→ Reloading page now...");
+  location.reload();
+} catch (error) {
+  console.error("→ Error committing batch:", error);
+  alert("❌ เกิดข้อผิดพลาดขณะจองที่นั่ง");
+  throw error;
+}
 
-  } catch (error) {
-    console.error("❌ Error committing batch:", error);
-    alert("❌ เกิดข้อผิดพลาดขณะจองที่นั่ง");
-    throw error; // 👉 สำคัญ เพื่อให้ .catch ใน bookSeats ทำงาน
-  }
 };
 
 
