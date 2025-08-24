@@ -266,12 +266,7 @@ function updateButtonTotal() {
   </script>
 
   <style>
-    @media screen and (max-width: 768px) {
-  .layout {
-    transform: scale(0.8);
-    transform-origin: top center;
-  }
-}
+  
 .restaurant-name {
   position: absolute;
   top: 30px;
@@ -328,12 +323,25 @@ function updateButtonTotal() {
   width: 900px;
   height: 650px;
   position: relative;
- /* background: rgba(255, 255, 255, 0.05);*/
   border-radius: 16px;
   transform-origin: top center;
 }
 
+/* ✅ จอเล็ก (มือถือทั่วไป) */
+@media screen and (max-width: 768px) {
+  .layout {
+    transform: scale(0.7);  /* ย่อเล็กลง */
+    margin-top: 40px;
+  }
+}
 
+/* ✅ จอเล็กมาก (เช่น iPhone SE, Android จอเล็ก) */
+@media screen and (max-width: 480px) {
+  .layout {
+    transform: scale(0.55);
+    margin-top: 60px;
+  }
+}
 
     .stage {
       position: absolute;
@@ -424,7 +432,7 @@ function updateButtonTotal() {
     }
 
     /* ปรับตำแหน่งใหม่ให้อยู่กลางจอมากขึ้น */
-    .t1 { top: 5px; left: 400px; }
+    .t1 { top: 1%; left: 45%; }
     .t2 { top: 90px; left: 400px; }
 
     .t3 { top: 160px; left: 300px; }
