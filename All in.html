@@ -325,14 +325,13 @@ function updateButtonTotal() {
 }
 
 .layout {
-  width: 900px;
-  height: 650px;
+  width: 100%;              /* กว้างสุดเต็มจอ */
+  max-width: 900px;         /* แต่ไม่เกิน 900px */
+  aspect-ratio: 9 / 6.5;    /* รักษาสัดส่วนเดิมแทนการ fix height */
   position: relative;
- /* background: rgba(255, 255, 255, 0.05);*/
-  border-radius: 16px;
-  transform-origin: top center;
+  margin: auto;
+  background: rgba(255,255,255,0.05); /* optional */
 }
-
 
 
     .stage {
@@ -350,20 +349,20 @@ function updateButtonTotal() {
     }
 
     .table {
-      position: absolute;
-      width: 70px;
-      height: 70px;
-      background: black;
-      color: white;
-      font-weight: bold;
-      font-size: 18px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      clip-path: polygon(10% 0%, 90% 0%, 100% 10%, 100% 90%, 90% 100%, 10% 100%, 0% 90%, 0% 10%);
-      cursor: pointer;
-      transition: background 0.3s;
-    }
+  position: absolute;
+  width: 8%;             /* ยืดหดตาม layout */
+  aspect-ratio: 1 / 1;   /* คงสี่เหลี่ยมจัตุรัส */
+  background: black;
+  color: white;
+  font-weight: bold;
+  font-size: 2vw;        /* ขนาดอักษรปรับตามจอ */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  clip-path: polygon(10% 0%, 90% 0%, 100% 10%, 100% 90%, 90% 100%, 10% 100%, 0% 90%, 0% 10%);
+  cursor: pointer;
+  transition: background 0.3s;
+}
 
     .table-b {
   width: 50px;
@@ -424,33 +423,33 @@ function updateButtonTotal() {
     }
 
     /* ปรับตำแหน่งใหม่ให้อยู่กลางจอมากขึ้น */
-    .t1 { top: 10px; left: 95%; }
-    .t2 { top: 90px; left: 95%; }
+    .t1 { top: 2%; left: 90%; }
+    .t2 { top: 14%; left: 90%; }
 
-    .t3 { top: 160px; left: 70%; }
-    .t4 { top: 235px; left: 70%; }
-    .t5 { top: 310px; left: 70%; }
-    .t6 { top: 385px; left: 70%; }
+    .t3 { top: 24%; left: 70%; }
+    .t4 { top: 36%; left: 70%; }
+    .t5 { top: 47%; left: 70%; }
+    .t6 { top: 59%; left: 70%; }
 
-    .t7 { top: 140px; left: -5%; }
-    .t8 { top: 215px; left: -5%; }
-    .t9 { top: 290px; left: -5%; }
-    .t10 { top: 365px; left: -5%; }
-    .t11 { top: 440px; left: -5%; }
+    .t7 { top: 21%; left: -0.5%; }
+    .t8 { top: 33%; left: -0.5%; }
+    .t9 { top: 44%; left: -0.5%; }
+    .t10 { top: 56%; left: -0.5%; }
+    .t11 { top: 67%; left: -0.5%; }
 
-    .t12 { top: 520px; left: -7%; }
-    .t13 { top: 595px; left: -7%; }
+    .t12 { top: 80%; left: -0.7%; }
+    .t13 { top: 91%; left: -0.7%; }
 
-    .b1 { top: 460px; left: 55%; }
-    .b2 { top: 520px; left: 55%; }
-    .b3 { top: 580px; left: 55%; }
-    .b4 { top: 640px; left: 55%; }
+    .b1 { top: 70%; left: 61%; }
+    .b2 { top: 80%; left: 61%; }
+    .b3 { top: 89%; left: 61%; }
+    .b4 { top: 98%; left: 61%; }
 
-    .seat { top: 170px; left: 90%; }
+    .seat { top: 26.1%; left: 100%; }
 
-    .bar-left   { top: 460px; left: 70%; }
+    .bar-left   { top: 70.8%; left: 77%; }
     /*.bar-right  { top: 460px; left: 90%; }*/
-    .bar-center { top: 460px; left: 85%; }
+    .bar-center { top: 70.8%; left: 94%; }
 
     .door-top-right { top: 20px; left: 360px; }
     .door-bottom-left { top: 680px; left: 15px; }
