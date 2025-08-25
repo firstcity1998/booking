@@ -260,28 +260,35 @@ if (data.status === "reserved") {
   </script>
 
   <style>
-     body {
-      margin: 0;
-      font-family: 'Prompt', sans-serif;
-      background: linear-gradient(to right, #000, #2e1a94);
-      color: white;
-      overflow: hidden;
-      position: relative;
-    }
+    body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Arial', sans-serif;
 
-    .container {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  max-width: 430px;
-  margin: 0 auto;
+  /* 🔳 พื้นหลัง */
   background-color: #4d4d4d;
-  background-image: url('https://img5.pic.in.th/file/secure-sv1/531fc8dc-8d1e-48f4-ad67-95dd405a107c.jpg');
+  background-image: url('https://img5.pic.in.th/file/secure-sv1/logo-blackground.md.jpg');
   background-repeat: no-repeat;
-  background-position: calc(50% - 25px) calc(50% + 40px);
-  background-size: 200px;
-  opacity: 1; /* ปรับตามต้องการ */
+  background-position: 44% 68%;   /* ให้อยู่กึ่งกลาง */
+  background-size: 185px;               /* ขนาดโลโก้คงที่ */
+
+  height: 100vh;
+  display: flex;
+  justify-content: center;  /* จัดแนวนอนกลาง */
+  align-items: center;      /* จัดแนวตั้งกลาง */
 }
+
+/* 🟦 กล่อง layout ปรับตามขนาดจอ */
+.layout {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  max-width: 900px;   /* กันไม่ให้ยืดเกินในจอใหญ่ */
+  max-height: 650px;  /* กันไม่ให้สูงเกิน */
+  margin: auto;       /* จัดให้อยู่ตรงกลาง */
+  box-sizing: border-box;
+}
+
 
     .stage {
       position: absolute;
@@ -303,15 +310,18 @@ if (data.status === "reserved") {
 
     .table {
   position: absolute;
-  width: 60px;
-  height: 60px;
-  background-color: #9c27b0;
+  width: 12%;             /* ยืดหดตาม layout */
+  aspect-ratio: 1 / 1;   /* คงสี่เหลี่ยมจัตุรัส */
+  background: black;
   color: white;
-  border-radius: 8px;
-  text-align: center;
-  line-height: 60px;
   font-weight: bold;
+  font-size: 4vw;        /* ขนาดอักษรปรับตามจอ */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  clip-path: polygon(10% 0%, 90% 0%, 100% 10%, 100% 90%, 90% 100%, 10% 100%, 0% 90%, 0% 10%);
   cursor: pointer;
+  transition: background 0.3s;
 }
 
 .table.circle {
@@ -347,8 +357,8 @@ if (data.status === "reserved") {
       transform: translateY(-50%);
     }
 
-    .door-top-right { top: 10px; left: 380px; }
-    .door-bottom-left { top: 600px; left: 380px; }
+    .door-top-right { top: 1%; left: 90%; }
+    .door-bottom-left { top: 90%; left: 90%; }
 
     #totalBox {
       position: absolute;
@@ -359,18 +369,7 @@ if (data.status === "reserved") {
       font-size: 18px;
     }
 
-    button {
-      position: absolute;
-      bottom: 20px;
-      left: 5%;
-      width: 90%;
-      padding: 12px;
-      background: #f59e0b;
-      color: black;
-      border: none;
-      border-radius: 10px;
-      font-size: 16px;
-    }
+    
    .floor-plan {
   position: relative;
   width: 100%;
@@ -379,14 +378,18 @@ if (data.status === "reserved") {
 
 .table {
   position: absolute;
-  width: 60px;
-  height: 60px;
-  background-color: #0c0c0c;
+  width: 12%;             /* ยืดหดตาม layout */
+  aspect-ratio: 1 / 1;   /* คงสี่เหลี่ยมจัตุรัส */
+  background: black;
   color: white;
-  border-radius: 8px;
-  text-align: center;
-  line-height: 60px;
   font-weight: bold;
+  font-size: 4vw;        /* ขนาดอักษรปรับตามจอ */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  clip-path: polygon(10% 0%, 90% 0%, 100% 10%, 100% 90%, 90% 100%, 10% 100%, 0% 90%, 0% 10%);
+  cursor: pointer;
+  transition: background 0.3s;
 }
     .table.reserved {
       background: #9ca3af;
@@ -398,8 +401,8 @@ if (data.status === "reserved") {
     }
     .bar {
   position: absolute;
-  top: 110px;
-  right: 0;
+  top: 15%;
+  right: 0.1%;
   width: 90px;
   height: 470px; /* ปรับความสูงตามแผนผัง */
   background-color: black;
@@ -415,30 +418,29 @@ if (data.status === "reserved") {
   z-index: 2;
 }
 
-
     #confirmBtnContainer {
-      position: fixed;
-      bottom: 0;
-      width: 100%;
-      background: #ffffffee;
-      text-align: center;
-      padding: 12px;
-      z-index: 10;
-    }
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  text-align: center;
+  background: transparent;
+  padding: 12px;
+}
 
-    #confirmBtn {
-      padding: 10px 24px;
-      font-size: 16px;
-      background-color: #10b981;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
+#confirmBtn {
+  padding: 10px 24px;
+  font-size: 16px;
+  background-color: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
 
-    #confirmBtn:hover {
-      background-color: #059669;
-    }
+
+  #confirmBtn:hover {
+    background-color: #059669;
+  }
     /* กล่องปฏิทิน */
 #datePicker {
   padding: 10px 14px;
@@ -523,36 +525,37 @@ label[for="datePicker"] {
   <label for="datePicker">📅 เลือกวันที่:</label>
   <input type="date" id="datePicker">
 </div>
-  <div class="container">
+  <div class="layout">
     <div class="stage">STAGE</div>
 
     <!-- โต๊ะเรียงตามภาพ -->
-    <div class="table" data-table="1" style="top: 130px; left: 280px;">1</div>
-    <div class="table" data-table="2" style="top: 130px; left: 160px;">2</div>
-    <div class="table" data-table="3" style="top: 130px; left: 60px;">3</div>
+    <div class="table" data-table="1" style="top: 20%; left: 68%;">1</div>
+    <div class="table" data-table="2" style="top: 20%; left: 40%;">2</div>
+    <div class="table" data-table="3" style="top: 20%; left: 8%;">3</div>
 
-    <div class="table" data-table="4" style="top: 200px; left: 260px;">4</div>
-    <div class="table" data-table="5" style="top: 200px; left: 60px;">5</div>
+    <div class="table" data-table="4" style="top: 31%; left: 68%;">4</div>
+    <div class="table" data-table="5" style="top: 31%; left: 8%;">5</div>
 
-    <div class="table" data-table="6" style="top: 270px; left: 260px;">6</div>
-    <div class="table" data-table="7" style="top: 270px; left: 160px;">7</div>
-    <div class="table" data-table="8" style="top: 270px; left: 60px;">8</div>
+    <div class="table" data-table="6" style="top: 42%; left: 68%;">6</div>
+    <div class="table" data-table="7" style="top: 42%; left: 40%;">7</div>
+    <div class="table" data-table="8" style="top: 42%; left: 8%;">8</div>
 
-    <div class="table circle" data-table="9" style="top: 350px; left: 260px;">9</div>
-    <div class="table circle" data-table="10" style="top: 350px; left: 60px;">10</div>
+    <div class="table circle" data-table="9" style="top: 54%; left: 68%;">9</div>
+    <div class="table circle" data-table="10" style="top: 54%; left: 8%;">10</div>
 
-    <div class="table" data-table="11" style="top: 440px; left: 260px;">11</div>
-    <div class="table" data-table="12" style="top: 440px; left: 60px;">12</div>
+    <div class="table" data-table="11" style="top: 67%; left: 68%;">11</div>
+    <div class="table" data-table="12" style="top: 67%; left: 8%;">12</div>
 
-    <div class="table" data-table="13" style="top: 510px; left: 260px;">13</div>
-    <div class="table" data-table="14" style="top: 510px; left: 60px;">14</div>
+    <div class="table" data-table="13" style="top: 78%; left: 68%;">13</div>
+    <div class="table" data-table="14" style="top: 78%; left: 8%;">14</div>
 
-<div class="bar"></div>
-<div class="door door-top-right"></div>
-    <div class="door door-bottom-left"></div>
+  <div class="bar"></div>
+  <div class="door door-top-right"></div>
+  <div class="door door-bottom-left"></div>
 
   <div id="confirmBtnContainer">
     <button id="confirmBtn" onclick="bookSeats()">จองเลย (0 บาท)</button>
   </div>
+
 </body>
 </html>
