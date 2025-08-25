@@ -268,10 +268,13 @@ function updateButtonTotal() {
   <style>
     @media screen and (max-width: 768px) {
   .layout {
-    transform: scale(0.8);
-    transform-origin: top center;
+    transform: none;   /* ❌ ยกเลิกการ scale */
+    width: 100%;       /* ✅ ใช้กว้างเต็มจอ */
+    height: auto;
+    aspect-ratio: 16/9; /* ✅ บังคับอัตราส่วน */
   }
 }
+
 .restaurant-name {
   position: absolute;
   top: 30px;
@@ -299,7 +302,6 @@ function updateButtonTotal() {
   /* 🔧 ตรงนี้คือ "ตำแหน่ง" ของภาพโลโก้ */
   /* ✅ ซ้าย-ขวา ปรับที่ค่าตัวแรก (เช่น calc(50% - 70px)) */
   /* ✅ บน-ล่าง ปรับที่ค่าตัวที่สอง (เช่น calc(50% - 96px)) */
-  background-position: calc(105px) calc(50% - 96px);
   background-position: calc(108px) calc(50% - 96px);
   /*
     ➤ ซ้าย-ขวา: calc(50% - 70px)
@@ -325,13 +327,15 @@ function updateButtonTotal() {
 }
 
 .layout {
-  width: 900px;
-  height: 650px;
+  width: 100%;
+  max-width: 900px;     /* ✅ จำกัดกว้างสุด */
+  aspect-ratio: 16/11;  /* ✅ กำหนดอัตราส่วนคงที่ */
   position: relative;
- /* background: rgba(255, 255, 255, 0.05);*/
+  margin: 0 auto;       /* ✅ จัดกลาง */
   border-radius: 16px;
-  transform-origin: top center;
+  background: rgba(255,255,255,0.02);
 }
+
 
 
 
