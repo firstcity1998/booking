@@ -24,6 +24,12 @@
     const pricePerSeat = 0;
     const selected = new Set();
     const seatElements = {};
+    const seatCapacity = {
+        "A1": 5, "A2": 5, "A3": 5, "A4": 5, "A5": 5,
+        "B1": 5, "B2": 5, "B3": 5, "B4": 4, "B5": 5, "B6": 4,
+        "C1": 4, "C2": 4, "C3": 4, "C4": 4,
+        "C5": 8, "C6": 8, "C7": 8, "C8": 8
+    };
 
     function getDateFromURL() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -94,8 +100,9 @@ if (data.status === "reserved") {
     selected.add(id);
   }
   updateButtonTotal();  // ✅ เพิ่มตรงนี้แทน document.getElementById("total") ที่ใช้ไม่ได้
-};
-}
+            updateMonitor();  // อัปเดตข้อมูลที่จอแสดงผล
+          };
+        }
       });
     });
 
@@ -114,6 +121,17 @@ if (data.status === "reserved") {
     btn.style.cursor = "pointer";
   }
 }
+function updateMonitor() {
+      const selectedSeats = Array.from(selected);
+      if (selectedSeats.length === 0) {
+        document.querySelector(".screen-content").textContent = "นั่งได้สูงสุด";
+      } else {
+        const seatLabels = selectedSeats.map(id => {
+          return `${id}: ${seatCapacity[id]} คน`;
+        }).join(", ");
+        document.querySelector(".screen-content").textContent = `ที่นั่งที่เลือก: ${seatLabels}`;
+      }
+    }
 
     window.reserveSeats = async (userId) => {
   if (selected.size === 0) {
@@ -364,7 +382,7 @@ if (data.status === "reserved") {
     }
 
     .door-top-right { top: 1%; left: 90%; }
-    .door-bottom-left { top: 80%; left: 45%; }
+    .door-bottom-left { top: 80%; left: 40%; }
 
     #totalBox {
       position: absolute;
@@ -542,6 +560,34 @@ label[for="datePicker"] {
   transform: translateX(-50%);    /* จัดให้เส้นอยู่กลางตรงๆ */
 }
 
+.monitor {
+            width: 30%;
+            height: 20%;
+            background-color: #2c2c2c; /* สีพื้นหลังเหมือนหน้าจอ */
+            border-radius: 10px; /* มุมกลมเล็กน้อย */
+            border: 5px solid #111; /* ขอบมอนิเตอร์ */
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5); /* เงา */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            margin-left: auto;
+            margin-right: 5%; /* ระยะห่างจากขอบขวา */
+            margin-top: 55%;
+        }
+        .screen-content {
+          width: 90%;
+          height: 90%;
+          background-color: #000; /* สีพื้นหลังในกล่อง */
+          display: flex;
+          justify-content: center; /* จัดแนวนอนให้อยู่กลาง */
+          align-items: flex-start; /* จัดแนวตั้งให้ตัวอักษรอยู่ด้านบน */
+          color: #00ff00; /* สีตัวอักษรเหมือนสีเทคโนโลยี */
+          padding-top: 10px; /* เพิ่มช่องว่างด้านบน (ถ้าต้องการ) */
+        }
+
   </style>
 </head>
 <body>
@@ -589,6 +635,12 @@ label[for="datePicker"] {
   <div id="confirmBtnContainer">
     <button id="confirmBtn" onclick="bookSeats()">จองเลย (0 บาท)</button>
   </div>
+
+  <div class="monitor">
+        <div class="screen-content">
+            นั่งได้สูงสุด
+        </div>
+    </div>
 
 </body>
 </html>
