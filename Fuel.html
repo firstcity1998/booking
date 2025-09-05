@@ -266,7 +266,7 @@ function updateMonitor() {
       return liff.sendMessages([flexMessage]);
     })
     .then(() => {
-      alert("✅ ส่งข้อมูลจองเรียบร้อยแล้ว");
+      alert("✅ จองสำเร็จกรุณาไปก่อน21:00ก่อนโต๊ะหลุด");
       liff.closeWindow();
     })
     .catch(err => {
