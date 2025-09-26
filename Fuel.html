@@ -47,46 +47,52 @@ document.addEventListener("DOMContentLoaded", () => {
       seatElements[id] = el;
     });
 //  DOM แล้วค่อยเชื่อม Firestore
-     if (dateId) {
-    const tablesRef = collection(db, "restaurants", restaurantId, "dates", dateId, "tables");
-      
-    onSnapshot(tablesRef, snapshot => {
-    snapshot.docChanges().forEach(change => {
-      const id = change.doc.id;
-      const data = change.doc.data();
-      const seat = seatElements[id];
-      if (!seat) return;
+    if (dateId) {
+  const tablesRef = collection(db, "restaurants", restaurantId, "dates", dateId, "tables");
 
-seat.classList.remove("selected", "reserved");
+  onSnapshot(tablesRef, snapshot => {
+  let allFull = true; // เริ่มต้นให้ถือว่าโต๊ะเต็มทั้งหมด
 
+  snapshot.docChanges().forEach(change => {
+    const id = change.doc.id;
+    const data = change.doc.data();
+    const seat = seatElements[id];
+    if (!seat) return;
 
-            if (data.status === "reserved") {
-              seat.classList.add("reserved");
-              seat.onclick = null;
-            } else if (data.status === "blocked") {
-              seat.classList.add("reserved");
-              seat.textContent = "❌";
-              seat.onclick = null;
-            } else {
-              seat.onclick = () => {
-                seat.classList.toggle("selected");
-                if (selected.has(id)) {
-                  selected.delete(id);
-                } else {
-                  selected.add(id);
-                }
-                updateButtonTotal();
-                updateMonitor();
-              };
-            }
-          });
-        });
-      } else {
-        // ❗ ถ้าไม่มีวันที่ → เปิด modal
-        document.getElementById("dateModal").style.display = "flex";
+    seat.classList.remove("selected", "reserved");
+
+    if (data.status === "reserved") {
+      seat.classList.add("reserved");
+      seat.onclick = null;
+    } else if (data.status === "blocked") {
+      seat.classList.add("reserved");
+      seat.textContent = "❌";
+      seat.onclick = null;
+    } else {
+      allFull = false; // มีโต๊ะว่างอย่างน้อย 1 โต๊ะ
+      seat.onclick = () => {
+        seat.classList.toggle("selected");
+        if (selected.has(id)) {
+          selected.delete(id);
+        } else {
+          selected.add(id);
+        }
+        updateButtonTotal();
+        updateMonitor();
+      };
+    }
+  });
+
+  // ✅ ถ้าโต๊ะเต็มทั้งหมด → แสดง modal
+      if (allFull) {
+        document.getElementById("fullModal").style.display = "flex";
       }
     });
-    
+  } else {
+    // กรณีไม่มี dateId อาจจะทำอะไรหรือแจ้งเตือน
+    document.getElementById("dateModal").style.display = "flex";
+  }
+});
 
     function updateButtonTotal() {
   const total = selected.size * pricePerSeat;
@@ -194,6 +200,10 @@ window.closeWarning = function () {
   // ไปต่อแม้จะเกิน 5 (เพราะเตือนแล้ว)
   window.location.href = `?date=${window.selectedDate}&people=${document.getElementById("peopleInput").value}`;
 };
+// ✅ ปิด modal โต๊ะเต็ม
+window.closeFullModal = function () {
+  document.getElementById("fullModal").style.display = "none";
+};
     // ✅ ตั้งค่า date picker ใน modal
     window.onload = function () {
       const today = new Date();
@@ -206,6 +216,7 @@ window.closeWarning = function () {
       document.getElementById("modalDatePicker").max = maxDate;
 
     
+      
     // ✅ LIFF init
    
       liff.init({ liffId: "2007619597-pL1yYoj3" }) // ใส่ LIFF ID จริง
@@ -659,6 +670,16 @@ window.closeWarning = function () {
             นั่งได้สูงสุด
         </div>
     </div>
+    <!-- 🔴 Modal โต๊ะเต็ม -->
+<div id="fullModal" class="modal">
+  <div class="modal-content">
+    <h2>😢 โต๊ะเต็มแล้ว</h2>
+    <p>ขออภัย ไม่มีโต๊ะว่างในวันนี้</p>
+    <button onclick="closeFullModal()">ตกลง</button>
+  </div>
+</div>
+
+
 
 </body>
 </html>          
