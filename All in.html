@@ -25,83 +25,70 @@ const pricePerSeat = 0;
 const selected = new Set();
 const seatElements = {};
 
-function getDateFromURL() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const date = urlParams.get('date');
-  if (date) {
-    return date;
-  } else {
-    const today = new Date().toISOString().split('T')[0];
-    return today;
-  }
-}
+// ✅ ดึงวันจาก URL ถ้าไม่มี ให้ null
+    function getDateFromURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('date');
+    }
 
 const dateId = getDateFromURL();
 
 document.addEventListener("DOMContentLoaded", () => {
-  const datePicker = document.getElementById("datePicker");
-
-  // ✅ กำหนดค่าเริ่มต้น
-  datePicker.value = dateId;
-
-  // ✅ จำกัดวัน (วันนี้ → อีก 6 วัน รวมทั้งหมด 7 วัน)
-  const today = new Date();
-  const minDate = today.toISOString().split("T")[0];
-  const maxDateObj = new Date(today);
-  maxDateObj.setDate(today.getDate() + 6);
-  const maxDate = maxDateObj.toISOString().split("T")[0];
-
-  datePicker.min = minDate;
-  datePicker.max = maxDate;
-
-  // ✅ เมื่อเปลี่ยนวัน → reload พร้อม query
-  datePicker.addEventListener("change", function (e) {
-    const selectedDate = e.target.value;
-    window.location.href = `?date=${selectedDate}`;
-  });
-});
-
-
-
-    // 1️⃣ Map โต๊ะทั้งหมด
+  
+     // 1️⃣ Map โต๊ะทั้งหมด
     document.querySelectorAll(".table").forEach(el => {
       const id = el.dataset.table;
       seatElements[id] = el;
     });
+//  DOM แล้วค่อยเชื่อม Firestore
+    if (dateId) {
+  const tablesRef = collection(db, "restaurants", restaurantId, "dates", dateId, "tables");
 
-    // 2️⃣ รอ DOM แล้วค่อยเชื่อม Firestore
-    const tablesRef = collection(db, "restaurants", restaurantId, "dates", dateId, "tables");
-
-    // 2️⃣ Firestore snapshot
   onSnapshot(tablesRef, snapshot => {
-    snapshot.docChanges().forEach(change => {
-      const id = change.doc.id;
-      const data = change.doc.data();
-      const seat = seatElements[id];
-      if (!seat) return;
+  let allFull = true; // เริ่มต้นให้ถือว่าโต๊ะเต็มทั้งหมด
 
-seat.classList.remove("selected", "reserved");
+  snapshot.docChanges().forEach(change => {
+    const id = change.doc.id;
+    const data = change.doc.data();
+    const seat = seatElements[id];
+    if (!seat) return;
 
-if (data.status === "reserved") {
-  seat.classList.add("reserved");
-  seat.onclick = null;
-} else if (data.status === "blocked") {
-  seat.classList.add("reserved");
-  seat.textContent = "❌";
-  seat.onclick = null;
-} else {
-  seat.onclick = () => {
-  seat.classList.toggle("selected");
-  if (selected.has(id)) {
-    selected.delete(id);
-  } else {
-    selected.add(id);
-  }
-  updateButtonTotal();  // ✅ เพิ่มตรงนี้แทน document.getElementById("total") ที่ใช้ไม่ได้
-};
-}
-      });
+    seat.classList.remove("selected", "reserved");
+
+    if (data.status === "reserved") {
+      seat.classList.add("reserved");
+      seat.onclick = null;
+    } else if (data.status === "blocked") {
+      seat.classList.add("reserved");
+      seat.textContent = "❌";
+      seat.onclick = null;
+    } else {
+      allFull = false; // มีโต๊ะว่างอย่างน้อย 1 โต๊ะ
+      seat.onclick = () => {
+        seat.classList.toggle("selected");
+        if (selected.has(id)) {
+          selected.delete(id);
+        } else {
+          selected.add(id);
+        }
+        updateButtonTotal();
+        updateMonitor();
+      };
+    }
+  });
+
+  // ✅ ถ้าโต๊ะเต็มทั้งหมด → แสดง modal
+      if (allFull) {
+        document.getElementById("fullModal").style.display = "flex";
+      }
     });
+  } else {
+    // กรณีไม่มี dateId อาจจะทำอะไรหรือแจ้งเตือน
+    document.getElementById("dateModal").style.display = "flex";
+  }
+});
+
+
   
 function updateButtonTotal() {
   const total = selected.size * pricePerSeat;
@@ -160,10 +147,64 @@ function updateButtonTotal() {
   }
 };
 
+ // ✅ Modal confirm date
+    window.confirmDate = function () {
+      const picker = document.getElementById("modalDatePicker");
+      const date = picker.value;
+      if (!date) {
+        alert("กรุณาเลือกวันที่ก่อน");
+        return;
+      }
+      // ซ่อน modal เลือกวัน
+  document.getElementById("dateModal").style.display = "none";
+  // โชว์ modal ใส่จำนวนคน
+  document.getElementById("peopleModal").style.display = "flex";
+  // เก็บวันไว้ใน window ชั่วคราว
+  window.selectedDate = date;
+};
 
+// ✅ ยืนยันจำนวนคน
+window.confirmPeople = function () {
+  const num = parseInt(document.getElementById("peopleInput").value);
+  if (!num || num <= 0) {
+    alert("กรุณาใส่จำนวนคนให้ถูกต้อง");
+    return;
+  }
+  if (num > 5) {
+    // โชว์ modal แจ้งเตือน
+    document.getElementById("peopleModal").style.display = "none";
+    document.getElementById("warningModal").style.display = "flex";
+  } else {
+    // ไปต่อได้เลย
+    window.location.href = `?date=${window.selectedDate}&people=${num}`;
+  }
+};
 
-    // ✅ LIFF init
+// ✅ ปิด warning modal
+window.closeWarning = function () {
+  document.getElementById("warningModal").style.display = "none";
+  // ไปต่อแม้จะเกิน 5 (เพราะเตือนแล้ว)
+  window.location.href = `?date=${window.selectedDate}&people=${document.getElementById("peopleInput").value}`;
+};
+// ✅ ปิด modal โต๊ะเต็ม
+window.closeFullModal = function () {
+  document.getElementById("fullModal").style.display = "none";
+};
+    // ✅ ตั้งค่า date picker ใน modal
     window.onload = function () {
+      const today = new Date();
+      const minDate = today.toISOString().split("T")[0];
+      const maxDateObj = new Date(today);
+      maxDateObj.setDate(today.getDate() + 6);
+      const maxDate = maxDateObj.toISOString().split("T")[0];
+
+      document.getElementById("modalDatePicker").min = minDate;
+      document.getElementById("modalDatePicker").max = maxDate;
+
+    
+      
+    // ✅ LIFF init
+   
       liff.init({ liffId: "2007619597-pL1yYoj3" }) // ใส่ LIFF ID จริง
         .then(() => {
           if (!liff.isLoggedIn()) {
@@ -481,81 +522,58 @@ function updateButtonTotal() {
     background-color: #059669;
   }
 
-  /* กล่องปฏิทิน */
-#datePicker {
-  padding: 10px 14px;
-  border-radius: 8px;
-  border: 2px solid #facc15;   /* เส้นขอบสีทอง */
-  background: #111;             /* พื้นหลังดำ */
-  color: #facc15;               /* ตัวอักษรสีทอง */
-  font-size: 16px;
-  font-weight: bold;
-  outline: none;
-  transition: all 0.2s ease-in-out;
-  cursor: pointer;
-}
+  /* 🔳 Modal เต็มจอ */
+    .modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.9);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+    .modal-content {
+      background: #111;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      color: #facc15;
+      font-family: 'Prompt', sans-serif;
+      width: 80%;
+      max-width: 350px;
+    }
+    .modal-content h2 { margin-bottom: 16px; }
+    .modal-content input {
+      margin-top: 12px;
+      padding: 10px;
+      width: 100%;
+      border-radius: 6px;
+      border: 2px solid #facc15;
+      background: #222;
+      color: #facc15;
+      font-size: 16px;
+    }
+    .modal-content button {
+      margin-top: 16px;
+      padding: 10px 20px;
+      background: #10b981;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
 
-/* เวลา hover */
-#datePicker:hover {
-  border-color: #ffdd33;
-  background: #1c1c1c;
-  box-shadow: 0 0 8px rgba(250, 204, 21, 0.5);
-}
-
-/* เวลา focus */
-#datePicker:focus {
-  border-color: #ffcc00;
-  box-shadow: 0 0 12px rgba(250, 204, 21, 0.8);
-}
-
-/* ปรับป้าย label ให้เข้าธีม */
-label[for="datePicker"] {
-  color: #facc15;
-  font-weight: bold;
-  font-size: 16px;
-  margin-right: 8px;
-}
-/* กล่องปฏิทิน */
-.calendar-container {
-  position: absolute;
-  top: 10px;           /* ระยะห่างจากบน */
-  left: 50%;           /* จัดให้อยู่กลาง */
-  transform: translateX(-50%);  /* ดึงให้ center พอดี */
-  background: rgba(0, 0, 0, 0.6);
-  padding: 8px 14px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-  z-index: 20;         /* ลอยอยู่เหนือ layout */
-}
-
-/* label */
-.calendar-container label {
-  color: #facc15;
-  font-weight: bold;
-  font-size: 15px;
-  white-space: nowrap;
-}
-
-/* input date */
-#datePicker {
-  padding: 8px 12px;
+    #peopleInput {
+  margin-top: 12px;
+  padding: 10px;
+  width: 100%;
   border-radius: 6px;
   border: 2px solid #facc15;
-  background: #111;
+  background: #222;
   color: #facc15;
-  font-size: 15px;
-  font-weight: bold;
-  outline: none;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-#datePicker:hover {
-  background: #1c1c1c;
-  box-shadow: 0 0 8px rgba(250, 204, 21, 0.4);
+  font-size: 16px;
 }
 
 
@@ -564,10 +582,40 @@ label[for="datePicker"] {
 <body>
   <h1  class="restaurant-name"></h1>
 
-<!-- 📅 ปฏิทินเลือกวัน -->
-<div class="calendar-container">
-  <label for="datePicker">📅 เลือกวันที่:</label>
-  <input type="date" id="datePicker">
+<!-- 📅 Modal เต็มจอ -->
+  <div id="dateModal" class="modal">
+    <div class="modal-content">
+      <h2>📅 กรุณาเลือกวันที่</h2>
+      <input type="date" id="modalDatePicker">
+      <button onclick="confirmDate()">ยืนยัน</button>
+    </div>
+  </div>
+
+<!-- 🔳 Modal ใส่จำนวนคน -->
+<div id="peopleModal" class="modal">
+  <div class="modal-content">
+    <h2>👥 กรุณาใส่จำนวนคน</h2>
+    <input type="number" id="peopleInput" placeholder="จำนวนคน" min="1">
+    <button onclick="confirmPeople()">ยืนยัน</button>
+  </div>
+</div>
+
+<!-- 🔳 Modal แจ้งเตือนเกิน 5 คน -->
+<div id="warningModal" class="modal">
+  <div class="modal-content">
+    <h2>⚠ แจ้งเตือน</h2>
+    <p>มาเกิน 5 คน กรุณาจอง 2 โต๊ะขึ้นไป</p>
+    <button onclick="closeWarning()">ตกลง</button>
+  </div>
+</div>
+
+<!-- 🔴 Modal โต๊ะเต็ม -->
+<div id="fullModal" class="modal">
+  <div class="modal-content">
+    <h2>😢 โต๊ะเต็มแล้ว</h2>
+    <p>ขออภัย ไม่มีโต๊ะว่างในวันนี้</p>
+    <button onclick="closeFullModal()">ตกลง</button>
+  </div>
 </div>
 
 
