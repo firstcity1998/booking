@@ -112,6 +112,17 @@ function updateButtonTotal() {
     return;
   }
 
+  // 🔔 ให้กรอกเบอร์โทรก่อนจอง
+const phone = prompt("📞 กรุณาใส่เบอร์โทรศัพท์สำหรับติดต่อกลับ (เช่น 0891234567)");
+
+if (!phone) {
+  alert("⚠️ กรุณาใส่เบอร์โทรศัพท์ก่อนทำการจอง");
+  return;
+}
+
+// ✅ เก็บไว้ใน window เพื่อใช้งานต่อภายหลัง
+window.phoneNumber = phone;
+
   const now = new Date();
   const batch = writeBatch(db);
   let reservedSeats = 0;
@@ -125,7 +136,7 @@ function updateButtonTotal() {
         reservedBy: {
           displayName: window.displayName,
           userId: window.userId,
-          phone: phone
+          phone: window.phoneNumber
         },
         timestamp: now,
         bookingDate: dateId
@@ -228,22 +239,6 @@ window.closeFullModal = function () {
     return;
   }
 
-   // 🔔 ให้กรอกเบอร์โทรก่อน
-  const phone = prompt("📞 กรุณาใส่เบอร์โทรศัพท์สำหรับติดต่อกลับ (เช่น 0891234567)");
-  if (!phone) {
-    alert("⚠️ กรุณาใส่เบอร์โทรศัพท์ก่อนทำการจอง");
-    return;
-  }
-
-  // ✅ ตรวจสอบรูปแบบเบอร์ (ต้องเป็นตัวเลข 9–10 หลัก)
-  if (!/^[0-9]{9,10}$/.test(phone)) {
-    alert("⚠️ กรุณาใส่เบอร์โทรศัพท์ให้ถูกต้อง (ตัวเลข 9–10 หลัก)");
-    return;
-  }
-
-  // เก็บเบอร์ไว้ใน window
-  window.phoneNumber = phone;
-
   const selectedSeats = Array.from(selected);
   const totalPrice = selectedSeats.length * pricePerSeat;
 
@@ -297,7 +292,7 @@ window.closeFullModal = function () {
                 color: "#d4d4d4"
               },
               { type: "text", 
-                text: `เบอร์โทร: ${phone}`,
+                text: `เบอร์โทร: ${window.phoneNumber}`,
                 size: "sm", 
                 color: "#facc15" 
               },
