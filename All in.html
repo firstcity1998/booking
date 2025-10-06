@@ -112,10 +112,25 @@ function updateButtonTotal() {
     return;
   }
 
+   // 🔔 ให้กรอกเบอร์โทรก่อนจอง
+  const phone = prompt("📞 กรุณาใส่เบอร์โทรศัพท์สำหรับติดต่อกลับ (เช่น 0891234567)");
+
+  // ถ้าไม่ใส่หรือกดยกเลิก
+  if (!phone) {
+    alert("⚠️ กรุณาใส่เบอร์โทรศัพท์ก่อนทำการจอง");
+    return;
+  }
+
+  // ✅ ตรวจสอบรูปแบบเบอร์ (ต้องเป็นตัวเลข 9–10 หลัก)
+  if (!/^[0-9]{9,10}$/.test(phone)) {
+    alert("⚠️ กรุณาใส่เบอร์โทรศัพท์ให้ถูกต้อง (ตัวเลข 9–10 หลัก)");
+    return;
+  }
+
   const now = new Date();
   const batch = writeBatch(db);
   let reservedSeats = 0;
-
+ 
   try {
     for (const id of selected) {
       const ref = doc(db, "restaurants", restaurantId, "dates", dateId, "tables", id);
@@ -124,7 +139,8 @@ function updateButtonTotal() {
         status: "reserved",
         reservedBy: {
           displayName: window.displayName,
-          userId: window.userId
+          userId: window.userId,
+          phone: phone
         },
         timestamp: now,
         bookingDate: dateId
@@ -278,6 +294,11 @@ window.closeFullModal = function () {
                 text: `วันที่จอง: ${dateId}`,
                 size: "sm",
                 color: "#d4d4d4"
+              },
+              { type: "text", 
+                text: `เบอร์โทร: ${phone}`,
+                size: "sm", 
+                color: "#facc15" 
               },
               {
                 type: "text",
