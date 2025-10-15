@@ -83,10 +83,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // ✅ ถ้าโต๊ะเต็มทั้งหมด → แสดง modal
-      if (allFull) {
-        document.getElementById("fullModal").style.display = "flex";
-      }
+  // ✅ ถ้าโต๊ะเต็มทั้งหมด → แสดง modal เฉพาะตอนเปิดหน้าใหม่ ไม่ใช่หลังเพิ่งจอง
+if (allFull && !window.justBooked) {
+  document.getElementById("fullModal").style.display = "flex";
+}
+
+// ✅ ถ้าเพิ่งจองเสร็จ → reset flag หลังผ่านไป 2 วินาที
+if (window.justBooked) {
+  setTimeout(() => { window.justBooked = false; }, 2000);
+}
     });
   } else {
     // กรณีไม่มี dateId อาจจะทำอะไรหรือแจ้งเตือน
@@ -172,6 +177,8 @@ while (true) {
     console.log("→ Batch commit starting...");
     await batch.commit();
     console.log("✅ Batch commit success");
+
+    window.justBooked = true; // ✅ ป้องกัน onSnapshot โชว์ modal หลังจองสำเร็จ
 
     selected.clear();
     updateButtonTotal();
