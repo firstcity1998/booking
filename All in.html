@@ -245,6 +245,12 @@ window.closeFullModal = function () {
   window.reserveSeats(window.userId)
     .then(() => {
       console.log("→ reserveSeats succeeded");
+      // 🔔 เช็คว่ามีเบอร์ไหมก่อนส่ง Flex Message
+      if (!window.phoneNumber || window.phoneNumber.trim() === "") {
+        alert("❌ จองไม่สำเร็จ กรุณาใส่เบอร์โทรก่อน");
+        liff.closeWindow();
+        return; // ❌ จบตรงนี้ ไม่ส่ง flex message
+      }
 
       const flexMessage = {
         type: "flex",
@@ -311,7 +317,7 @@ window.closeFullModal = function () {
       return liff.sendMessages([flexMessage]);
     })
     .then(() => {
-      alert("✅ ส่งข้อมูลจองเรียบร้อยแล้ว");
+      alert("✅ จองเรียบร้อยแล้ว");
       liff.closeWindow();
     })
     .catch(err => {
