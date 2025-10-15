@@ -174,11 +174,11 @@ while (true) {
       reservedSeats++;
     }
 
+    window.justBooked = true; // ✅ ป้องกัน onSnapshot โชว์ modal หลังจองสำเร็จ
+    
     console.log("→ Batch commit starting...");
     await batch.commit();
     console.log("✅ Batch commit success");
-
-    window.justBooked = true; // ✅ ป้องกัน onSnapshot โชว์ modal หลังจองสำเร็จ
 
     selected.clear();
     updateButtonTotal();
