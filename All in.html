@@ -242,7 +242,7 @@ window.closeFullModal = function () {
         });
     };
 
-    window.bookSeats = function () {
+    window.bookSeats = async function () {
   if (selected.size === 0) {
     alert("กรุณาเลือกที่นั่งก่อน");
     return;
@@ -251,82 +251,89 @@ window.closeFullModal = function () {
   const selectedSeats = Array.from(selected);
   const totalPrice = selectedSeats.length * pricePerSeat;
 
-  window.reserveSeats(window.userId)
-    .then(() => {
-      console.log("→ reserveSeats succeeded");
+  try {
+    // ✅ เรียกจองก่อน (รอให้สำเร็จจริง)
+    await window.reserveSeats(window.userId);
+    console.log("→ reserveSeats succeeded");
 
-      const flexMessage = {
-        type: "flex",
-        altText: "📌 ยืนยันการจองโต๊ะ",
-        contents: {
-          type: "bubble",
-          styles: {
-            header: { backgroundColor: "#000000" },
-            body: { backgroundColor: "#111111" }
-          },
-          header: {
-            type: "box",
-            layout: "vertical",
-            contents: [{
+    // 🔒 ตรวจสอบว่าเบอร์โทรยังคงอยู่ (กันกรณีจองล้มเหลวแต่เบอร์หาย)
+    if (!window.phoneNumber) {
+      console.warn("⚠️ ไม่มีเบอร์โทร — ข้ามการส่ง Flex Message");
+      return;
+    }
+
+    // ✅ Flex Message
+    const flexMessage = {
+      type: "flex",
+      altText: "📌 ยืนยันการจองโต๊ะ",
+      contents: {
+        type: "bubble",
+        styles: {
+          header: { backgroundColor: "#000000" },
+          body: { backgroundColor: "#111111" }
+        },
+        header: {
+          type: "box",
+          layout: "vertical",
+          contents: [{
+            type: "text",
+            text: "📌 ร้าน All In",
+            weight: "bold",
+            size: "lg",
+            color: "#facc15"
+          }]
+        },
+        body: {
+          type: "box",
+          layout: "vertical",
+          spacing: "sm",
+          contents: [
+            {
               type: "text",
-              text: "📌 ร้าน All In",
+              text: `คุณ ${window.displayName} ได้จองโต๊ะ`,
               weight: "bold",
-              size: "lg",
+              size: "md",
+              color: "#ffffff"
+            },
+            {
+              type: "text",
+              text: `ที่นั่ง: ${selectedSeats.join(", ")}`,
+              size: "sm",
+              wrap: true,
+              color: "#d4d4d4"
+            },
+            {
+              type: "text",
+              text: `วันที่จอง: ${dateId}`,
+              size: "sm",
+              color: "#d4d4d4"
+            },
+            {
+              type: "text",
+              text: `เบอร์โทร: ${window.phoneNumber}`,
+              size: "sm",
               color: "#facc15"
-            }]
-          },
-          body: {
-            type: "box",
-            layout: "vertical",
-            spacing: "sm",
-            contents: [
-              {
-                type: "text",
-                text: `คุณ ${window.displayName} ได้จองโต๊ะ`,
-                weight: "bold",
-                size: "md",
-                color: "#ffffff"
-              },
-              {
-                type: "text",
-                text: `ที่นั่ง: ${selectedSeats.join(", ")}`,
-                size: "sm",
-                wrap: true,
-                color: "#d4d4d4"
-              },
-              {
-                type: "text",
-                text: `วันที่จอง: ${dateId}`,
-                size: "sm",
-                color: "#d4d4d4"
-              },
-              { type: "text", 
-                text: `เบอร์โทร: ${window.phoneNumber}`,
-                size: "sm", 
-                color: "#facc15" 
-              },
-              {
-                type: "text",
-                text: `รวมทั้งหมด: ${totalPrice} บาท`,
-                size: "sm",
-                weight: "bold",
-                color: "#10b981"
-              }
-            ]
-          }
+            },
+            {
+              type: "text",
+              text: `รวมทั้งหมด: ${totalPrice} บาท`,
+              size: "sm",
+              weight: "bold",
+              color: "#10b981"
+            }
+          ]
         }
-      };
+      }
+    };
 
-      return liff.sendMessages([flexMessage]);
-    })
-    .then(() => {
-      alert("✅ ส่งข้อมูลจองเรียบร้อยแล้ว");
-      liff.closeWindow();
-    })
-    .catch(err => {
-      console.error("❌ Booking flow error:", err);
-      alert("❌ ส่งข้อความไม่สำเร็จ: " + (err.message || err));
-    });
+    await liff.sendMessages([flexMessage]);
+    alert("✅ ส่งข้อมูลจองเรียบร้อยแล้ว");
+    liff.closeWindow();
+
+  } catch (err) {
+    console.error("❌ Booking flow error:", err);
+    alert("❌ การจองไม่สำเร็จหรือมีปัญหาระหว่างส่งข้อความ");
+  }
 };
 
 
