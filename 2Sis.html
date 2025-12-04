@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ผังโต๊ะร้าน 2SIS</title>
+
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, doc, writeBatch, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyByEiQP04T_RxQ88CMZRWxUMI_r9ra5ub4",
+      authDomain: "purdto-platform.firebaseapp.com",
+      projectId: "purdto-platform",
+      messagingSenderId: "670687363597",
+      appId: "1:670687363597:web:dd96a5936c87ad27dd0b44"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const restaurantId = "2sis";  // 🔥 เปลี่ยนชื่อร้าน
+    const pricePerSeat = 0;
+    const selected = new Set();
+    const seatElements = {};
+    const seatCapacity = {
+        "A1": 5, "A2": 5, "A3": 5, "A4": 5, "A5": 5,
+        "B1": 5, "B2": 5, "B3": 5, "B4": 4, "B5": 5, "B6": 4,
+        "C1": 4, "C2": 4, "C3": 4, "C4": 4,
+        "C5": 8, "C6": 8, "C7": 8, "C8": 8
+    };
+
+    // ✅ ดึงวันจาก URL ถ้าไม่มี ให้ null
+    function getDateFromURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('date');
+    }
+
+const dateId = getDateFromURL();
+
+document.addEventListener("DOMContentLoaded", () => {
+  
+     // 1️⃣ Map โต๊ะทั้งหมด
+    document.querySelectorAll(".table").forEach(el => {
+      const id = el.dataset.table;
+      seatElements[id] = el;
+    });
+//  DOM แล้วค่อยเชื่อม Firestore
+    if (dateId) {
+  const tablesRef = collection(db, "restaurants", restaurantId, "dates", dateId, "tables");
+
+  onSnapshot(tablesRef, snapshot => {
+  let allFull = true; // เริ่มต้นให้ถือว่าโต๊ะเต็มทั้งหมด
+
+  snapshot.docChanges().forEach(change => {
+    const id = change.doc.id;
+    const data = change.doc.data();
+    const seat = seatElements[id];
+    if (!seat) return;
+
+    seat.classList.remove("selected", "reserved");
+
+    if (data.status === "reserved") {
+      seat.classList.add("reserved");
+      seat.onclick = null;
+    } else if (data.status === "blocked") {
+      seat.classList.add("reserved");
+      seat.textContent = "❌";
+      seat.onclick = null;
+    } else {
+      allFull = false; // มีโต๊ะว่างอย่างน้อย 1 โต๊ะ
+      seat.onclick = () => {
+        seat.classList.toggle("selected");
+        if (selected.has(id)) {
+          selected.delete(id);
+        } else {
+          selected.add(id);
+        }
+        updateButtonTotal();
+        updateMonitor();
+      };
+    }
+  });
+
+  // ✅ ถ้าโต๊ะเต็มทั้งหมด → แสดง modal เฉพาะตอนเปิดหน้าใหม่ ไม่ใช่หลังเพิ่งจอง
+if (allFull && !window.justBooked) {
+  document.getElementById("fullModal").style.display = "flex";
+}
+
+// ✅ ถ้าเพิ่งจองเสร็จ → reset flag หลังผ่านไป 2 วินาที
+if (window.justBooked) {
+  setTimeout(() => { window.justBooked = false; }, 2000);
+}
+    });
+  } else {
+    // กรณีไม่มี dateId อาจจะทำอะไรหรือแจ้งเตือน
+    document.getElementById("dateModal").style.display = "flex";
+  }
+});
+
+    function updateButtonTotal() {
+  const total = selected.size * pricePerSeat;
+  const btn = document.getElementById("confirmBtn");
+  btn.textContent = `จองเลย (${total} บาท)`;
+  btn.disabled = selected.size === 0;
+
+  // เพิ่ม style ตอน disabled (ถ้าต้องการ)
+  if (btn.disabled) {
+    btn.style.backgroundColor = "#9ca3af";
+    btn.style.cursor = "not-allowed";
+  } else {
+    btn.style.backgroundColor = "#10b981";
+    btn.style.cursor = "pointer";
+  }
+}
+function updateMonitor() {
+      const selectedSeats = Array.from(selected);
+      if (selectedSeats.length === 0) {
+        document.querySelector(".screen-content").textContent = "นั่งได้สูงสุด";
+      } else {
+        const seatLabels = selectedSeats.map(id => {
+          return `${id}: ${seatCapacity[id]} คน`;
+        }).join(", ");
+        document.querySelector(".screen-content").textContent = `ที่นั่งที่เลือก: ${seatLabels}`;
+      }
+    }
+
+   window.reserveSeats = async (userId) => {
+  if (selected.size === 0) {
+    alert("กรุณาเลือกที่นั่งก่อน");
+    return;
+  }
+
+  // 🔔 ให้ผู้ใช้ใส่เบอร์โทรก่อนจอง
+let phone = "";
+while (true) {
+  phone = prompt("📞 กรุณาใส่เบอร์โทรศัพท์สำหรับติดต่อกลับ (10 หลัก):", phone || "");
+  
+  if (phone === null) {
+    // กด “ยกเลิก”
+    alert("❌ ยกเลิกการจอง");
+    return;
+  }
+
+  // ✅ ตรวจสอบความถูกต้องของเบอร์โทร (ต้องเป็นตัวเลข 10 หลัก)
+  if (/^[0-9]{10}$/.test(phone.trim())) {
+    window.phoneNumber = phone.trim(); // เก็บไว้ใช้ใน flex message
+    break; // ออกจาก loop เมื่อเบอร์ถูกต้อง
+  } else {
+    alert("⚠️ กรุณาใส่เบอร์โทร 10 หลักให้ถูกต้อง");
+  }
+}
+
+  const now = new Date();
+  const batch = writeBatch(db);
+  let reservedSeats = 0;
+
+  try {
+    for (const id of selected) {
+      const ref = doc(db, "restaurants", restaurantId, "dates", dateId, "tables", id);
+
+      batch.set(ref, {
+        status: "reserved",
+        reservedBy: {
+          displayName: window.displayName,
+          userId: window.userId,
+          phone: window.phoneNumber
+        },
+        timestamp: now,
+        bookingDate: dateId
+      }, { merge: true });
+
+      reservedSeats++;
+    }
+
+    window.justBooked = true; // ✅ ป้องกัน onSnapshot โชว์ modal หลังจองสำเร็จ
+    
+    console.log("→ Batch commit starting...");
+    await batch.commit();
+    console.log("✅ Batch commit success");
+
+    selected.clear();
+    updateButtonTotal();
+
+  } catch (error) {
+    console.error("❌ Error committing batch:", error);
+    alert("❌ เกิดข้อผิดพลาดขณะจองที่นั่ง");
+    throw error;
+  }
+};
+ // ✅ Modal confirm date
+    window.confirmDate = function () {
+      const picker = document.getElementById("modalDatePicker");
+      const date = picker.value;
+      if (!date) {
+        alert("กรุณาเลือกวันที่ก่อน");
+        return;
+      }
+      // ซ่อน modal เลือกวัน
+  document.getElementById("dateModal").style.display = "none";
+  // โชว์ modal ใส่จำนวนคน
+  document.getElementById("peopleModal").style.display = "flex";
+  // เก็บวันไว้ใน window ชั่วคราว
+  window.selectedDate = date;
+};
+
+// ✅ ยืนยันจำนวนคน
+window.confirmPeople = function () {
+  const num = parseInt(document.getElementById("peopleInput").value);
+  if (!num || num <= 0) {
+    alert("กรุณาใส่จำนวนคนให้ถูกต้อง");
+    return;
+  }
+  if (num > 5) {
+    // โชว์ modal แจ้งเตือน
+    document.getElementById("peopleModal").style.display = "none";
+    document.getElementById("warningModal").style.display = "flex";
+  } else {
+    // ไปต่อได้เลย
+    window.location.href = `?date=${window.selectedDate}&people=${num}`;
+  }
+};
+
+// ✅ ปิด warning modal
+window.closeWarning = function () {
+  document.getElementById("warningModal").style.display = "none";
+  // ไปต่อแม้จะเกิน 5 (เพราะเตือนแล้ว)
+  window.location.href = `?date=${window.selectedDate}&people=${document.getElementById("peopleInput").value}`;
+};
+// ✅ ปิด modal โต๊ะเต็ม
+window.closeFullModal = function () {
+  document.getElementById("fullModal").style.display = "none";
+};
+    // ✅ ตั้งค่า date picker ใน modal
+    window.onload = function () {
+      const today = new Date();
+      const minDate = today.toISOString().split("T")[0];
+      const maxDateObj = new Date(today);
+      maxDateObj.setDate(today.getDate() + 6);
+      const maxDate = maxDateObj.toISOString().split("T")[0];
+
+      document.getElementById("modalDatePicker").min = minDate;
+      document.getElementById("modalDatePicker").max = maxDate;
+
+    
+      
+    // ✅ LIFF init
+   
+      liff.init({ liffId: "2007619597-pL1yYoj3" }) // ใส่ LIFF ID จริง
+        .then(() => {
+          if (!liff.isLoggedIn()) {
+            liff.login();
+          } else {
+            liff.getProfile().then(profile => {
+              window.userId = profile.userId;
+              window.displayName = profile.displayName;
+            });
+          }
+        })
+        .catch(err => {
+          console.error("LIFF Initialization failed", err);
+        });
+    };
+
+    window.bookSeats = async function () {
+  if (selected.size === 0) {
+    alert("กรุณาเลือกที่นั่งก่อน");
+    return;
+  }
+
+  const selectedSeats = Array.from(selected);
+  const totalPrice = selectedSeats.length * pricePerSeat;
+
+  try {
+    // ✅ เรียกจองก่อน (รอให้สำเร็จจริง)
+    await window.reserveSeats(window.userId);
+    console.log("→ reserveSeats succeeded");
+
+    // 🔒 ตรวจสอบว่าเบอร์โทรยังคงอยู่ (กันกรณีจองล้มเหลวแต่เบอร์หาย)
+    if (!window.phoneNumber) {
+      console.warn("⚠️ ไม่มีเบอร์โทร — ข้ามการส่ง Flex Message");
+      return;
+    }
+
+      const flexMessage = {
+        type: "flex",
+        altText: "📌 ยืนยันการจองโต๊ะ",
+        contents: {
+          type: "bubble",
+          styles: {
+            header: { backgroundColor: "#000000" },
+            body: { backgroundColor: "#111111" }
+          },
+          header: {
+            type: "box",
+            layout: "vertical",
+            contents: [{
+              type: "text",
+              text: "📌 ร้าน 2SIS EASY RESTAURANT",
+              weight: "bold",
+              size: "lg",
+              color: "#facc15"
+            }]
+          },
+          body: {
+            type: "box",
+            layout: "vertical",
+            spacing: "sm",
+            contents: [
+              {
+                type: "text",
+                text: `คุณ ${window.displayName} ได้จองโต๊ะ`,
+                weight: "bold",
+                size: "md",
+                color: "#ffffff"
+              },
+              {
+                type: "text",
+                text: `ที่นั่ง: ${selectedSeats.join(", ")}`,
+                size: "sm",
+                wrap: true,
+                color: "#d4d4d4"
+              },
+              {
+                type: "text",
+                text: `วันที่จอง: ${dateId}`,
+                size: "sm",
+                color: "#d4d4d4"
+              },
+              { type: "text", 
+                text: `เบอร์โทร: ${window.phoneNumber}`,
+                size: "sm", 
+                color: "#facc15" 
+              },
+              {
+                type: "text",
+                text: `รวมทั้งหมด: ${totalPrice} บาท`,
+                size: "sm",
+                weight: "bold",
+                color: "#10b981"
+              }
+            ]
+          }
+        }
+      };
+
+      await liff.sendMessages([flexMessage]);
+    alert("✅ จองสำเร็จกรุณาไปก่อน21:00ก่อนโต๊ะหลุด");
+    liff.closeWindow();
+
+  } catch (err) {
+    console.error("❌ Booking flow error:", err);
+    alert("❌ การจองไม่สำเร็จหรือมีปัญหาระหว่างส่งข้อความ");
+  }
+};
+
+  </script>
+
+  <style>
+    body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Arial', sans-serif;
+
+  /* 🔳 พื้นหลัง */
+  background-color: #4d4d4d;
+  /*background-image: url('https://img5.pic.in.th/file/secure-sv1/531fc8dc-8d1e-48f4-ad67-95dd405a107c.jpg');*/
+  background-repeat: no-repeat;
+  background-position: 40% 68%;   /* ให้อยู่กึ่งกลาง */
+  background-size: 185px;               /* ขนาดโลโก้คงที่ */
+
+  height: 100vh;
+  display: flex;
+  justify-content: center;  /* จัดแนวนอนกลาง */
+  align-items: center;      /* จัดแนวตั้งกลาง */
+}
+
+/* 🟦 กล่อง layout ปรับตามขนาดจอ */
+.layout {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  max-width: 900px;   /* กันไม่ให้ยืดเกินในจอใหญ่ */
+  max-height: 650px;  /* กันไม่ให้สูงเกิน */
+  margin: auto;       /* จัดให้อยู่ตรงกลาง */
+  box-sizing: border-box;
+}
+
+
+    .stage {
+  position: absolute;
+  top: 56%;
+  left: 0;
+  width: 50%;
+  height: 100px;
+  background: #009732;
+  border-bottom-left-radius: 0px;
+  border-bottom-right-radius: 0px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding-bottom: 12px;
+  font-size: 28px;
+  font-weight: bold;
+  color: rgb(0, 0, 0);
+
+  /* ✅ หมุน 90 องศาและชิดซ้าย */
+  transform: rotate(-90deg);
+  transform-origin: left center;
+}
+
+.table.rectangle {
+  aspect-ratio: 4 / 1;     /* ปรับอัตราส่วนให้โต๊ะยาว (4:1) */
+  width: 12%;              /* กำหนดขนาดกว้างให้โต๊ะที่เป็นสี่เหลี่ยมผืนผ้า */
+  border-radius: 8%;       /* โค้งมุมโต๊ะ */
+}
+
+.table.circle {
+  width: 4%;          /* กำหนดขนาดโต๊ะ */
+  height: 3%;         /* ต้องเท่ากับ width ในการทำวงกลม */
+  border-radius: 50%;   /* ทำให้เป็นวงกลม */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.table.selected {
+  background: #10b981;
+  color: white;
+}
+
+.table.reserved {
+  background: #9ca3af;
+  pointer-events: none;
+}
+
+   .door {
+      position: absolute;
+      width: 25px;
+      height: 50px;
+      border: 2px solid rgb(252, 248, 248);
+    }
+
+    .door::after {
+      content: '';
+      position: absolute;
+      width: 5px;
+      height: 5px;
+      background: rgb(255, 255, 255);
+      border-radius: 50%;
+      top: 50%;
+      left: 5px;
+      transform: translateY(-50%);
+    }
+
+    .door-top-right { top: 1%; left: 94%; }
+    .door-bottom-left { top: 80%; left: 40%; }
+
+    #totalBox {
+      position: absolute;
+      bottom: 80px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 18px;
+    }
+
+    
+   .floor-plan {
+  position: relative;
+  width: 100%;
+  height: 600px; /* หรือปรับตามขนาดภาพ */
+}
+
+.table {
+  position: absolute;
+  width: 7%;             /* ยืดหดตาม layout */
+  aspect-ratio: 1 / 1;   /* คงสี่เหลี่ยมจัตุรัส */
+  background: black;
+  color: white;
+  font-weight: bold;
+  font-size: 3vw;        /* ขนาดอักษรปรับตามจอ */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  clip-path: polygon(10% 0%, 90% 0%, 100% 10%, 100% 90%, 90% 100%, 10% 100%, 0% 90%, 0% 10%);
+  cursor: pointer;
+  transition: background 0.3s;
+}
+    .table.reserved {
+      background: #9ca3af;
+      pointer-events: none;
+    }
+    .table.selected {
+      background: #10b981;
+      color: white;
+    }
+    .bar {
+  position: absolute;
+  top: 80%;
+  right: 75%;
+  width: 50px;
+  height: 170px; /* ปรับความสูงตามแผนผัง */
+  background-color: rgb(252, 252, 252);
+  color: rgb(12, 12, 12);
+  writing-mode: vertical-rl;
+  text-align: center;
+  font-weight: bold;
+  font-size: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-left: 2px solid #ffffff; /* เส้นขอบม่วงเข้ม */
+  z-index: 2;
+  transform: rotate(-90deg);
+}
+
+    #confirmBtnContainer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  text-align: center;
+  background: transparent;
+  padding: 12px;
+}
+
+#confirmBtn {
+  padding: 10px 24px;
+  font-size: 16px;
+  background-color: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+
+  #confirmBtn:hover {
+    background-color: #059669;
+  }
+    
+
+.line {
+  width: 50%;                 /* ความกว้างครึ่งหนึ่งของหน้าจอ */
+  height: 2px;                /* ความหนาของเส้น */
+  background: rgb(252, 250, 250); /* สีเส้น */
+  margin: 35% 0;              /* ระยะห่างด้านบน-ล่าง */
+  margin-right: auto;          /* ✅ ดันไปทางขวาสุด */
+}
+.vline {
+  width: 2px;                           /* ความหนาของเส้นตั้ง */
+  height: 173px;                        /* ความสูงของเส้น */
+  background: rgb(252, 250, 250);       /* สี */
+  position: absolute;                   /* เปิดโหมดจัดตำแหน่ง */
+  transform: translate(-50%, 0);        /* จัดตำแหน่งให้ตรงกลางของแกน X */
+}
+/* เส้นที่ 1 */
+.v1 { top: 0%; left: 50%; }
+
+/* เส้นที่ 2 */
+.v2 { top: 27%; left: 36%; height: 150px;}
+
+/* เส้นที่ 3 */
+.v3 { top: 51%; left: 46%; height: 180px;}
+
+.v4 {
+  top: 10%;
+  left: 1%;
+  height: 70px;
+  width: 3px;        /* ความหนาเส้น ถ้ายังไม่ได้ใส่ */
+  background: red;   /* สีแดง */
+  position: absolute;
+}
+
+.v5 {
+  top: 30%;
+  left: 1%;
+  height: 40px;
+  width: 3px;        /* ความหนาเส้น ถ้ายังไม่ได้ใส่ */
+  background: red;   /* สีแดง */
+  position: absolute;
+}
+
+
+.hline {
+  width: 10%;                        /* ความกว้างเส้น แนวนอน */
+  height: 2px;                        /* ความหนา */
+  background: rgb(252, 250, 250);     /* สีเส้น */
+  position: absolute;                 /* เพื่อเลื่อนตำแหน่ง */
+  top: 40%;                           /* ปรับขึ้น-ลงเป็นเปอร์เซ็นต์ */
+  left: 50%;                          /* ปรับซ้าย-ขวาเป็นเปอร์เซ็นต์ */
+  transform: translateX(-50%);        /* จัดให้อยู่กึ่งกลางตามแกน X */
+}
+.hline-red {
+  width: 7%;
+  height: 3px;
+  position: absolute;
+  background: red;
+}
+
+
+.monitor {
+            width: 30%;
+            height: 20%;
+            background-color: #2c2c2c; /* สีพื้นหลังเหมือนหน้าจอ */
+            border-radius: 10px; /* มุมกลมเล็กน้อย */
+            border: 5px solid #111; /* ขอบมอนิเตอร์ */
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5); /* เงา */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            margin-left: auto;
+            margin-right: 5%; /* ระยะห่างจากขอบขวา */
+            margin-top: 65%;
+        }
+        .screen-content {
+          width: 90%;
+          height: 90%;
+          background-color: #000; /* สีพื้นหลังในกล่อง */
+          display: flex;
+          justify-content: center; /* จัดแนวนอนให้อยู่กลาง */
+          align-items: flex-start; /* จัดแนวตั้งให้ตัวอักษรอยู่ด้านบน */
+          color: #00ff00; /* สีตัวอักษรเหมือนสีเทคโนโลยี */
+          padding-top: 10px; /* เพิ่มช่องว่างด้านบน (ถ้าต้องการ) */
+        }
+
+         /* 🔳 Modal เต็มจอ */
+    .modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.9);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+    .modal-content {
+      background: #111;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      color: #facc15;
+      font-family: 'Prompt', sans-serif;
+      width: 80%;
+      max-width: 350px;
+    }
+    .modal-content h2 { margin-bottom: 16px; }
+    .modal-content input {
+      margin-top: 12px;
+      padding: 10px;
+      width: 100%;
+      border-radius: 6px;
+      border: 2px solid #facc15;
+      background: #222;
+      color: #facc15;
+      font-size: 16px;
+    }
+    .modal-content button {
+      margin-top: 16px;
+      padding: 10px 20px;
+      background: #10b981;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    #peopleInput {
+  margin-top: 12px;
+  padding: 10px;
+  width: 100%;
+  border-radius: 6px;
+  border: 2px solid #facc15;
+  background: #222;
+  color: #facc15;
+  font-size: 16px;
+}
+
+
+  </style>
+</head>
+<body>
+  <!-- 📅 Modal เต็มจอ -->
+  <div id="dateModal" class="modal">
+    <div class="modal-content">
+      <h2>📅 กรุณาเลือกวันที่</h2>
+      <input type="date" id="modalDatePicker">
+      <button onclick="confirmDate()">ยืนยัน</button>
+    </div>
+  </div>
+
+<!-- 🔳 Modal ใส่จำนวนคน -->
+<div id="peopleModal" class="modal">
+  <div class="modal-content">
+    <h2>👥 กรุณาใส่จำนวนคน</h2>
+    <input type="number" id="peopleInput" placeholder="จำนวนคน" min="1">
+    <button onclick="confirmPeople()">ยืนยัน</button>
+  </div>
+</div>
+
+<!-- 🔳 Modal แจ้งเตือนเกิน 5 คน -->
+<div id="warningModal" class="modal">
+  <div class="modal-content">
+    <h2>⚠ แจ้งเตือน</h2>
+    <p>มาเกิน 5 คน กรุณาจอง 2 โต๊ะขึ้นไป</p>
+    <button onclick="closeWarning()">ตกลง</button>
+  </div>
+</div>
+
+
+  <div class="layout">
+    <div class="stage">STAGE</div>
+
+    <!-- โต๊ะเรียงตามภาพ -->
+    <div class="table" data-table="A1" style="top: 27%; left: 12%; width: 10%; height: 5%;">A1</div>
+    <div class="table" data-table="A2" style="top: 27%; left: 25%; width: 10%; height: 5%;">A2</div>
+    <div class="table" data-table="A3" style="top: 37%; left: 12%; width: 10%; height: 5%;">A3</div>
+    <div class="table" data-table="A4" style="top: 37%; left: 25%; width: 10%; height: 5%;">A4</div>
+    <div class="table" data-table="A5" style="top: 47%; left: 12%; width: 10%; height: 5%;">A5</div>
+    <div class="table" data-table="A6" style="top: 47%; left: 25%; width: 10%; height: 5%;">A6</div>
+
+    <div class="table" data-table="A7" style="top: 57%; left: 12%; width: 10%; height: 5%;">A7</div>
+    <div class="table" data-table="A8" style="top: 57%; left: 25%; width: 10%; height: 5%;">A8</div>
+    <div class="table" data-table="A9" style="top: 67%; left: 12%;">A9</div>
+    <div class="table" data-table="A10" style="top: 67%; left: 25%;">A10</div>
+    <div class="table" data-table="A11" style="top: 52%; left: 35%;">A11</div>
+    <div class="table" data-table="A12" style="top: 62%; left: 35%;">A12</div>
+    <div class="table" data-table="A13" style="top: 77%; left: 12%;">A13</div>
+    <div class="table" data-table="A14" style="top: 77%; left: 25%;">A14</div>
+    <div class="table" data-table="A17" style="top: 75%; left: 1%;">A17</div>
+    <div class="table" data-table="A18" style="top: 65%; left: 1%;">A18</div>
+
+    <div class="table" data-table="B1" style="top: 28%; left: 38%; height: 7%;">B1</div>
+    <div class="table" data-table="B2" style="top: 28%; left: 48%; height: 7%;">B2</div>
+    <div class="table" data-table="B3" style="top: 36%; left: 38%; height: 7%;">B3</div>
+
+    
+    <div class="table" data-table="C1" style="top: 75%; left: 45%; width: 16%; height: 7%; transform: rotate(-90deg);">C1</div>
+    <div class="table" data-table="C2" style="top: 75%; left: 55%; width: 16%; height: 7%; transform: rotate(-90deg);">C2</div>
+    <div class="table" data-table="C3" style="top: 75%; left: 65%; width: 16%; height: 7%; transform: rotate(-90deg);">C3</div>
+    <div class="table" data-table="C4" style="top: 75%; left: 75%; width: 16%; height: 7%; transform: rotate(-90deg);">C4</div>
+    <div class="table" data-table="C7" style="top: 20%; left: 65%; width: 14%; height: 5%; transform: rotate(0deg);">C7</div>
+    <div class="table" data-table="C9" style="top: 20%; left: 50%; width: 14%; height: 5%; transform: rotate(0deg);">C9</div>
+    <div class="table" data-table="C12" style="top: 2%; left: 70%; width: 14%; height: 5%; transform: rotate(0deg);">C12</div>
+
+    <div class="table" data-table="B4" style="top: 36%; left: 48%; height: 7%;">B4</div>
+    <div class="table" data-table="B5" style="top: 44%; left: 38%; height: 7%;">B5</div>
+    <div class="table" data-table="B6" style="top: 44%; left: 48%; height: 7%;">B6</div>
+    <div class="table" data-table="B7" style="top: 30%; left: 62%; width: 14%; height: 5%;">B7</div>
+    <div class="table" data-table="B8" style="top: 37%; left: 60%;">B8</div>
+    <div class="table" data-table="B9" style="top: 37%; left: 70%;">B9</div>
+    <div class="table" data-table="B10" style="top: 44%; left: 60%;">B10</div>
+    <div class="table" data-table="B11" style="top: 44%; left: 70%;">B11</div>
+    <div class="table" data-table="B12" style="top: 53%; left: 50%;">B12</div>
+    <div class="table" data-table="B13" style="top: 53%; left: 60%;">B13</div>
+    <div class="table" data-table="B14" style="top: 53%; left: 70%;">B14</div>
+    <div class="table" data-table="B15" style="top: 63%; left: 50%;">B15</div>
+    <div class="table" data-table="B16" style="top: 63%; left: 60%;">B16</div>
+    <div class="table" data-table="B17" style="top: 63%; left: 70%;">B17</div>
+
+    <div class="table circle" data-table="1" style="top: 40%; left: 86%; position:absolute;">1</div>
+    <div class="table circle" data-table="2" style="top: 37%; left: 86%; position:absolute;">2</div>
+    <div class="table circle" data-table="3" style="top: 34%; left: 86%; position:absolute;">3</div>
+    <div class="table circle" data-table="4" style="top: 31%; left: 86%; position:absolute;">4</div>
+    <div class="table circle" data-table="5" style="top: 28%; left: 86%; position:absolute;">5</div>
+    <div class="table circle" data-table="6" style="top: 25%; left: 86%; position:absolute;">6</div>
+    <div class="table circle" data-table="7" style="top: 22%; left: 86%; position:absolute;">7</div>
+    <div class="table circle" data-table="8" style="top: 19%; left: 86%; position:absolute;">8</div>
+    <div class="table circle" data-table="9" style="top: 16%; left: 86%; position:absolute;">9</div>
+    <div class="table circle" data-table="10" style="top: 12%; left: 87%; position:absolute;">10</div>
+    <div class="table circle" data-table="11" style="top: 12%; left: 91%; position:absolute;">11</div>
+    <div class="table circle" data-table="12" style="top: 12%; left: 95%; position:absolute;">12</div>
+
+    <div class="table" data-table="G1" style="top: 20%; left: 17%; width: 10%; height: 5%;">G1</div>
+    <div class="table" data-table="G2" style="top: 10%; left: 17%; width: 10%; height: 5%;">G2</div>
+    <div class="table" data-table="G3" style="top: 20%; left: 33%; width: 10%; height: 5%;">G3</div>
+    <div class="table" data-table="G4" style="top: 10%; left: 33%; width: 10%; height: 5%;">G4</div>
+    <div class="table" data-table="G5" style="top: 15%; left: 7%; width: 10%; height: 5%;">G5</div>
+
+
+  
+
+    
+
+  <div class="bar" style="
+  font-size:24px;
+  font-weight:700;
+  padding:10px 25px;
+  background:#1a1a1a;
+  color:#fa15e7;
+  border:2px solid #510dce;
+  border-radius:10px;
+  letter-spacing:2px;
+  width:fit-content;
+  position:absolute;
+  left:15%;
+  transform:translateX(-50%) rotate(50%);
+  top:75%;
+  margin:15px 0;
+">
+  GAME ZONE
+</div>
+  <div class="bar" style="
+  font-size:28px;
+  font-weight:700;
+  padding:10px 25px;
+  background:#1a1a1a;
+  color:#facc15;
+  border:2px solid #facc15;
+  border-radius:10px;
+  letter-spacing:2px;
+  width:fit-content;
+  position:absolute;
+  left:70%;
+  transform:translateX(-50%) rotate(50%);
+  top:75%;
+  margin:15px 0;
+">
+  Toilet
+</div>
+<div class="bar" style="
+  font-size:20px;
+  font-weight:500;
+  padding:3px 11px;
+  background:#1a1a1a;
+  color:#e9e9e8;
+  border:2px solid #0e0d0d;
+  border-radius:10px;
+  letter-spacing:2px;
+  width:fit-content;
+  position:absolute;
+  left:15%;
+  transform:translateX(-50%) rotate(50%);
+  top:-10%;
+  margin:0px 0;
+">
+  TICKET
+</div>
+<div class="bar" style="
+  font-size:12px;              /* ลดขนาดตัวอักษร */
+  font-weight:700;
+  padding:2px 6px;             /* ลดช่องว่างรอบข้อความ */
+  background:#08d45d;
+  color:#e9e9e8;
+  border:2px solid #050505;
+  border-radius:0px;
+  letter-spacing:2px;          /* ลดระยะตัวอักษร */
+  width:5%;              /* กำหนดความกว้างเอง */
+  height:15%;    /* ความสูง */
+  position:absolute;
+  left:65%;
+  transform:translateX(-50%) rotate(50%); /* ต้องใช้ deg ไม่ใช่ % */
+  top:5%;
+  margin:0;
+">
+  POOL
+</div>
+<div class="bar" style="
+  font-size:12px;              /* ลดขนาดตัวอักษร */
+  font-weight:700;
+  padding:2px 6px;             /* ลดช่องว่างรอบข้อความ */
+  background:#36013d;
+  color:#e9e9e8;
+  border:2px solid #050505;
+  border-radius:0px;
+  letter-spacing:2px;          /* ลดระยะตัวอักษร */
+  width:5%;              /* กำหนดความกว้างเอง */
+  height:30%;    /* ความสูง */
+  position:absolute;
+  left:90%;
+  transform: rotate(180deg); /* ต้องใช้ deg ไม่ใช่ % */
+  top:15%;
+  margin:0;
+">
+  BAR
+</div>
+<div class="bar" style="
+  font-size:12px;              /* ลดขนาดตัวอักษร */
+  font-weight:700;
+  padding:2px 6px;             /* ลดช่องว่างรอบข้อความ */
+  background:#727172;
+  color:#070701;
+  border:2px solid #050505;
+  border-radius:0px;
+  letter-spacing:2px;          /* ลดระยะตัวอักษร */
+  width:5%;              /* กำหนดความกว้างเอง */
+  height:30%;    /* ความสูง */
+  position:absolute;
+  left:90%;
+  transform: rotate(180deg); /* ต้องใช้ deg ไม่ใช่ % */
+  top:45%;
+  margin:0;
+">
+  KITCHEN
+</div>
+
+
+
+  <div class="door door-top-right"></div>
+   <div class="line"></div>
+   <div class="vline v1"></div>
+   <div class="vline v2"></div>
+   <div class="vline v3"></div>
+   <div class="vline v4"></div>
+   <div class="vline v5"></div>
+   
+   <div class="hline" style="top:51%;left: 41%;"></div>  <!-- เส้นแนวนอนเส้นที่สอง -->
+   <div class="hline-red" style="top:1%; left:73%;"></div>
+   <div class="hline-red" style="top:85%; left:55%;"></div>
+   
+
+  <div id="confirmBtnContainer">
+    <button id="confirmBtn" onclick="bookSeats()">จองเลย (0 บาท)</button>
+  </div>
+
+ <!-- <div class="monitor">
+        <div class="screen-content">
+            นั่งได้สูงสุด
+        </div>
+    </div>-->
+    <!-- 🔴 Modal โต๊ะเต็ม -->
+<div id="fullModal" class="modal">
+  <div class="modal-content">
+    <h2>😢 โต๊ะเต็มแล้ว</h2>
+    <p>สามารถ Walk In ได้หลัง21:00น.</p>
+    <button onclick="closeFullModal()">ตกลง</button>
+  </div>
+</div>
+
+
+
+</body>
+</html>          
