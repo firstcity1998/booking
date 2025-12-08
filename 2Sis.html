@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>ผังโต๊ะร้าน 2SIS</title>
+  <title>ผังโต๊ะร้าน 2SIS EASY RESTAURANT</title>
 
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script type="module">
@@ -516,13 +516,14 @@ window.closeFullModal = function () {
   transform: rotate(-90deg);
 }
 
-    #confirmBtnContainer {
+   #confirmBtnContainer {
   position: fixed;
   bottom: 0;
   width: 100%;
   text-align: center;
   background: transparent;
   padding: 12px;
+  z-index: 9999;        /* ★ เพิ่มเพื่อให้ปุ่มอยู่บนสุด */
 }
 
 #confirmBtn {
@@ -533,12 +534,14 @@ window.closeFullModal = function () {
   border: none;
   border-radius: 8px;
   cursor: pointer;
+  z-index: 10000;       /* ★ เผื่อมี element บัง เพิ่ม z-index ให้ปุ่มด้วย */
+  position: relative;   /* ★ จำเป็นเพื่อให้ z-index ทำงาน */
 }
 
+#confirmBtn:hover {
+  background-color: #059669;
+}
 
-  #confirmBtn:hover {
-    background-color: #059669;
-  }
     
 
 .line {
