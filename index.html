@@ -102,7 +102,7 @@ if (window.justBooked) {
     function updateButtonTotal() {
   const total = selected.size * pricePerSeat;
   const btn = document.getElementById("confirmBtn");
-  btn.textContent = `จองเลย (${total} บาท)`;
+  btn.textContent = `จองเลย `;
   btn.disabled = selected.size === 0;
 
   // เพิ่ม style ตอน disabled (ถ้าต้องการ)
