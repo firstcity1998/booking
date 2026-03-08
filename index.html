@@ -1,303 +1,252 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>BAR Template</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ผังโต๊ะร้าน Fuel</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-<style>
-  :root{
-    --page-bg: #0b0b10;
-    --card-bg: #141318;
-    --muted: #bfbfc3;
-    --accent: #f15a29;
-    --white: #fff;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%;margin:0;font-family:"Open Sans",system-ui,Arial;background:var(--page-bg);color:var(--white);-webkit-font-smoothing:antialiased}
-  a{color:inherit;text-decoration:none}
-  /* Navbar */
-  nav{
-    position:fixed;left:0;right:0;top:0;height:68px;display:flex;align-items:center;justify-content:space-between;padding:18px 36px;z-index:60;
-    transition:background .25s ease,backdrop-filter .25s ease;
-  }
-  nav .logo{font-family:"Oswald";letter-spacing:2px;font-weight:600}
-  nav .menu{display:flex;gap:18px;align-items:center}
-  nav .menu a{font-weight:600;font-size:0.92rem;color:rgba(255,255,255,0.95)}
-  nav.scrolled{background:rgba(0,0,0,0.5);backdrop-filter:blur(6px)}
-  /* HERO */
-  header.hero{
-    min-height:100vh; display:flex; align-items:center; justify-content:center; position:relative; padding-top:68px;
-    overflow:hidden;
-  }
-  /* background split images: left and right */
-  .hero-bg{
-    position:absolute;inset:0;display:flex;gap:0;z-index:0;
-  }
-  .hero-bg .col{flex:1;background-position:center;background-size:cover}
-  .hero-bg .left{background-image: url('https://cdn.pixabay.com/photo/2015/01/16/08/32/whisky-601215_1280.jpg');}
-  .hero-bg .right{background-image: url('https://cdn.pixabay.com/photo/2023/12/11/09/36/whisky-8443153_1280.jpg');}
-  /* center semicircle/round panel */
-  .hero-panel {
-    position: relative;
-    z-index: 10;
-    width: 420px;
-    height: 420px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.08); /* โปร่งใส + ขาวบาง ๆ */
-    backdrop-filter: blur(12px) saturate(150%); /* ทำให้เบลอพื้นหลัง */
-    -webkit-backdrop-filter: blur(12px) saturate(150%); /* สำหรับ Safari */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
-    transform: translateY(0);
-    border: 2px solid rgba(255, 255, 255, 0.2); /* ขอบโปร่งแสงเหมือนกระจก */
-}
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, doc, writeBatch, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  /* small top indicator circle with number */
-  .hero-panel .top-ind{
-    font-size:12px;color:var(--muted);text-align:center;margin-bottom:8px;
-  }
-  .hero-panel .bignum{
-    font-family:"Oswald"; font-size:90px; line-height:0.9; letter-spacing:1px;
-    font-weight:700; margin:0; padding:0; color:var(--white);
-  }
-  .hero-panel .subtitle{
-    margin-top:10px;color:var(--muted);font-size:0.95rem;
-  }
-  .hero-panel .cta{
-    margin-top:18px;padding:10px 20px;background:transparent;border:1px solid rgba(255,255,255,0.12);color:var(--muted);border-radius:4px;font-weight:600;
-    transition:all .18s ease;
-  }
-  .hero-panel .cta:hover{transform:translateY(-3px);border-color:var(--accent);color:var(--white)}
-  /* left logo + small menu in top area (over background) */
-  .hero-topbar{
-    position:absolute;top:18px;left:36px;z-index:30;display:flex;gap:12px;align-items:center;color:var(--white);font-weight:600
-  }
-  .hero-topbar .mini-logo{display:flex;align-items:center;gap:10px}
-  .hero-topbar .mini-logo .dot{width:10px;height:10px;border-radius:50%;background:var(--accent)}
-  .hero-topright {position:absolute;right:36px;top:18px;z-index:30;color:var(--white)}
-  .hero-topright a{margin-left:18px;font-weight:600;color:rgba(255, 255, 255, 0.9)}
-  /* About section */
-  .section{max-width:1100px;margin:60px auto;padding:20px}
-  .about{
-    background:var(--card-bg);padding:48px;border-radius:6px;box-shadow:0 10px 30px rgba(0,0,0,0.55);
-  }
-  .about h2{font-family:"Oswald";font-size:28px;margin-bottom:8px;letter-spacing:1px}
-  .about p{color:var(--muted);line-height:1.6}
-  .divider{height:1px;background:rgba(255,255,255,0.03);margin:40px 0}
-  /* What's On grid */
-  .whats-on{display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:start}
-  .card{
-    background:var(--card-bg);border-radius:6px;overflow:hidden;box-shadow:0 6px 30px rgba(0,0,0,0.5);
-    display:flex;flex-direction:column;
-  }
-  .card .thumb{height:220px;background-size:cover;background-position:center}
-  .card .content{padding:24px;display:flex;flex-direction:column;gap:10px}
-  .card h3{margin:0;font-family:"Oswald";font-weight:600}
-  .card p{margin:0;color:var(--muted);font-size:0.95rem}
-  .card .btn-row{margin-top:12px}
-  .small-cta{
-    display:inline-block;padding:8px 14px;border-radius:4px;border:1px solid rgba(255,255,255,0.08);font-weight:600;font-size:0.9rem;color:var(--muted);
-    transition:all .12s ease;
-  }
-  .small-cta:hover{border-color:var(--accent);color:var(--white);transform:translateY(-2px)}
-  /* Banner */
-  .mid-banner{height:240px;margin:70px 0;border-radius:6px;background-image:linear-gradient(rgba(0,0,0,0.35),rgba(0,0,0,0.35)),url('https://images.unsplash.com/photo-1579226905180-7cc0c7f77f89?auto=format&fit=crop&w=1500&q=80');background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center}
-  .mid-banner h2{font-family:"Oswald";font-size:28px}
-  /* footer */
-  footer{padding:28px;text-align:center;color:var(--muted);font-size:0.92rem;margin-top:40px}
-  /* Responsive */
-  @media (max-width:980px){
-    .hero-panel{width:360px;height:360px}
-    .whats-on{grid-template-columns:1fr}
-    .hero-bg .left{background-position:right center}
-    .hero-bg .right{display:none}
-  }
-  @media (max-width:600px){
-    nav{padding:12px 16px}
-    .hero-panel{width:300px;height:300px}
-    header.hero{padding-top:64px}
-    .hero-topbar{left:16px}
-    .hero-topright{right:16px}
-    .hero-panel .bignum{font-size:64px}
-    .mid-banner{height:180px}
-  }
+    const firebaseConfig = {
+      apiKey: "AIzaSyByEiQP04T_RxQ88CMZRWxUMI_r9ra5ub4",
+      authDomain: "purdto-platform.firebaseapp.com",
+      projectId: "purdto-platform",
+      messagingSenderId: "670687363597",
+      appId: "1:670687363597:web:dd96a5936c87ad27dd0b44"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  /* small polish for central big text to match "BAR" style visually */
-  .hero-panel .bignum { text-transform:uppercase; font-weight:700; }
-  .hero-panel .bignum span{display:block;font-size:0.28em;color:var(--muted);letter-spacing:1px;margin-bottom:10px}
+    const restaurantId = "fuel";  // 🔥 เปลี่ยนชื่อร้าน
+    const pricePerSeat = 0;
+    const selected = new Set();
+    const seatElements = {};
+    const seatCapacity = {
+        "A1": 4, "A2": 4, "A3": 4, "A4": 4, "A5": 4,
+        "B1": 4, "B2": 4, "B3": 4, "B4": 4, "B5": 4, "B6": 4,
+        "C1": 4, "C2": 4, "C3": 4, "C4": 4,
+        "C5": 4, "C6": 4, "C7": 4, "C8": 4
+    };
 
-  .social-icons {
-  margin-top: 15px;
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-}
+    // ✅ ดึงวันจาก URL ถ้าไม่มี ให้ null
+    function getDateFromURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('date');
+    }
 
-.social-icons a {
-  color: white;
-  font-size: 28px;
-  transition: all 0.3s ease;
-  background: rgba(255,255,255,0.08);
-  padding: 10px;
-  border-radius: 50%;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,0.2);
-}
+const dateId = getDateFromURL();
 
-.social-icons a:hover {
-  color: #f15a29;
-  transform: translateY(-3px);
-  background: rgba(255,255,255,0.15);
-}
-
-</style>
-</head>
-<body>
-
-<nav id="nav">
-  <div class="logo">PURDTO</div>
-  <div class="menu">
-    <a href="#about">About</a>
-    <a href="#whats-on">BAR</a>
-    <a href="#contact">Contact</a>
-  </div>
-</nav>
-
-<header class="hero" role="banner">
-  <div class="hero-bg" aria-hidden="true">
-    <div class="col left"></div>
-    <div class="col right"></div>
-  </div>
-
-  <div class="hero-topbar" aria-hidden="true">
-    <div class="mini-logo"><div class="dot"></div><div style="font-size:0.95rem"></div></div>
-  </div>
-  <div class="hero-topright" aria-hidden="true">
-    <a href="#"></a>
-    <a href="#"></a>
-    <a href="#"></a>
-  </div>
-
-  <div class="hero-panel" aria-label="Main">
-    <div class="top-ind"></div>
-    <div class="bignum"><span style="font-size:10px;opacity:.95"> </span>เปิดโต๊ะ</div>
-    <div class="subtitle">Local Bar with Live Music</div>
-    <button class="cta" onclick="scrollToSection('#about')">Book a Table</button>
-  </div>
-</header>
-
-<main>
-  <section class="section about" id="about">
-    <h2>About</h2>
-    <p style="margin-top:14px;color:var(--muted);font-size:15px;line-height:1.7">
-      “เปิดโต๊ะ” คือวิธีใหม่ในการจองโต๊ะร้านเหล้าที่ทั้งง่ายและสนุก
-คุณสามารถเลือกโต๊ะที่ถูกใจได้เอง เห็นตำแหน่งจริงในร้านแบบชัด ๆ ผ่านมือถือ
-จองเสร็จปุ๊บ มั่นใจได้ว่ามีโต๊ะรอ ไม่ต้องโทร ไม่ต้องลุ้นให้ว่าง
-พร้อมสิทธิพิเศษและโปรโมชันจากร้านพาร์ทเนอร์ให้ค่ำคืนของคุณพิเศษยิ่งกว่าเดิม
-
-    </p>
-  </section>
-
-  <div class="section" id="whats-on">
-    <h2 style="text-align:center;margin-bottom:18px;font-family:Oswald">เลือกร้าน</h2>
-
-    <div class="whats-on">
-      <article class="card">
-        <div class="thumb" style="background-image:url('https://img2.pic.in.th/pic/fule.jpg')"></div>
-        <div class="content">
-          <div>
-            <h3>Fuel of Life</h3>
-            <p>Come before 9p.m.</p>
-          </div>
-          <div class="btn-row">
-            <a class="small-cta" href="Fuel.html">Book a Table</a>
-          </div>
-        </div>
-      </article>
-
-      <article class="card">
-        <div class="thumb" style="background-image:url('https://img2.pic.in.th/pic/495372794_122153875058512192_2982595356274901710_n.md.jpg')"></div>
-        <div class="content">
-          <div>
-            <h3>All In Nongkhai</h3>
-            <p>Come before 9p.m.</p>
-          </div>
-          <div class="btn-row">
-    <a class="small-cta" href="All in.html" id="bookTableBtn">Book a Table</a>
-    </div>
-</div>
-
-      </article>
-    </div>
-  </div>
-
-<article class="card">
-        <div class="thumb" style="background-image:url('https://img2.pic.in.th/pic/3c41b04e-7517-433b-a8a3-5aaf28e5f038.md.jpg')"></div>
-        <div class="content">
-          <div>
-            <h3>2SIS Easy Restaurant</h3>
-            <p>Come before 9p.m.</p>
-          </div>
-          <div class="btn-row">
-            <a class="small-cta" href="2Sis.html">Book a Table</a>
-          </div>
-        </div>
-      </article>
-    </div>
-  </div>
+document.addEventListener("DOMContentLoaded", () => {
   
-  <article class="card">
-        <div class="thumb" style="background-image:url('https://img5.pic.in.th/file/secure-sv1/2sis.jpg')"></div>
-        <div class="content">
-          <div>
-            <h3>The Majestic Room</h3>
-            <p>Come before 9p.m.</p>
-          </div>
-          <div class="btn-row">
-            <a class="small-cta" href="#">Book a Table</a>
-          </div>
-        </div>
-      </article>
-    </div>
-  </div>
+     // 1️⃣ Map โต๊ะทั้งหมด
+    document.querySelectorAll(".table").forEach(el => {
+      const id = el.dataset.table;
+      seatElements[id] = el;
+    });
+//  DOM แล้วค่อยเชื่อม Firestore
+    if (dateId) {
+  const tablesRef = collection(db, "restaurants", restaurantId, "dates", dateId, "tables");
 
+  onSnapshot(tablesRef, snapshot => {
+  let allFull = true; // เริ่มต้นให้ถือว่าโต๊ะเต็มทั้งหมด
+
+  snapshot.docChanges().forEach(change => {
+    const id = change.doc.id;
+    const data = change.doc.data();
+    const seat = seatElements[id];
+    if (!seat) return;
+
+    seat.classList.remove("selected", "reserved");
+
+    if (data.status === "reserved") {
+      seat.classList.add("reserved");
+      seat.onclick = null;
+    } else if (data.status === "blocked") {
+      seat.classList.add("reserved");
+      seat.textContent = "❌";
+      seat.onclick = null;
+    } else {
+      allFull = false; // มีโต๊ะว่างอย่างน้อย 1 โต๊ะ
+      seat.onclick = () => {
+        seat.classList.toggle("selected");
+        if (selected.has(id)) {
+          selected.delete(id);
+        } else {
+          selected.add(id);
+        }
+        updateButtonTotal();
+        updateMonitor();
+      };
+    }
+  });
+
+  // ✅ ถ้าโต๊ะเต็มทั้งหมด → แสดง modal เฉพาะตอนเปิดหน้าใหม่ ไม่ใช่หลังเพิ่งจอง
+if (allFull && !window.justBooked) {
+  document.getElementById("fullModal").style.display = "flex";
+}
+
+// ✅ ถ้าเพิ่งจองเสร็จ → reset flag หลังผ่านไป 2 วินาที
+if (window.justBooked) {
+  setTimeout(() => { window.justBooked = false; }, 2000);
+}
+    });
+  } else {
+    // กรณีไม่มี dateId อาจจะทำอะไรหรือแจ้งเตือน
+    document.getElementById("dateModal").style.display = "flex";
+  }
+});
+
+    function updateButtonTotal() {
+  const total = selected.size * pricePerSeat;
+  const btn = document.getElementById("confirmBtn");
+  btn.textContent = `จองเลย (${total} บาท)`;
+  btn.disabled = selected.size === 0;
+
+  // เพิ่ม style ตอน disabled (ถ้าต้องการ)
+  if (btn.disabled) {
+    btn.style.backgroundColor = "#9ca3af";
+    btn.style.cursor = "not-allowed";
+  } else {
+    btn.style.backgroundColor = "#10b981";
+    btn.style.cursor = "pointer";
+  }
+}
+function updateMonitor() {
+      const selectedSeats = Array.from(selected);
+      if (selectedSeats.length === 0) {
+        document.querySelector(".screen-content").textContent = "นั่งได้สูงสุด";
+      } else {
+        const seatLabels = selectedSeats.map(id => {
+          return `${id}: ${seatCapacity[id]} คน`;
+        }).join(", ");
+        document.querySelector(".screen-content").textContent = `ที่นั่งที่เลือก: ${seatLabels}`;
+      }
+    }
+
+   window.reserveSeats = async (userId) => {
+  if (selected.size === 0) {
+    alert("กรุณาเลือกที่นั่งก่อน");
+    return;
+  }
+
+  // 🔔 ให้ผู้ใช้ใส่เบอร์โทรก่อนจอง
+let phone = "";
+while (true) {
+  phone = prompt("📞 กรุณาใส่เบอร์โทรศัพท์สำหรับติดต่อกลับ (10 หลัก):", phone || "");
   
+  if (phone === null) {
+    // กด “ยกเลิก”
+    alert("❌ ยกเลิกการจอง");
+    return;
+  }
 
-  <div class="section">
-    <div class="mid-banner" role="img" aria-label="Banner: Come down & grab a pint">
-      <h2>Campaign coming soon</h2>
-    </div>
-  </div>
+  // ✅ ตรวจสอบความถูกต้องของเบอร์โทร (ต้องเป็นตัวเลข 10 หลัก)
+  if (/^[0-9]{10}$/.test(phone.trim())) {
+    window.phoneNumber = phone.trim(); // เก็บไว้ใช้ใน flex message
+    break; // ออกจาก loop เมื่อเบอร์ถูกต้อง
+  } else {
+    alert("⚠️ กรุณาใส่เบอร์โทร 10 หลักให้ถูกต้อง");
+  }
+}
 
-  <section class="section" id="contact">
-  <div style="max-width:900px;margin:auto;background:transparent;padding:20px 0;text-align:center">
-    <p style="color:var(--muted)">Contact</p>
+  const now = new Date();
+  const batch = writeBatch(db);
+  let reservedSeats = 0;
+
+  try {
+    for (const id of selected) {
+      const ref = doc(db, "restaurants", restaurantId, "dates", dateId, "tables", id);
+
+      batch.set(ref, {
+        status: "reserved",
+        reservedBy: {
+          displayName: window.displayName,
+          userId: window.userId,
+          phone: window.phoneNumber
+        },
+        timestamp: now,
+        bookingDate: dateId
+      }, { merge: true });
+
+      reservedSeats++;
+    }
+
+    window.justBooked = true; // ✅ ป้องกัน onSnapshot โชว์ modal หลังจองสำเร็จ
     
-    <div class="social-icons">
-      <a href="https://mail.google.com/mail/u/4/?ogbl#inbox" title="Email"><i class="fa-solid fa-envelope"></i></a>
-      <a href="https://www.facebook.com/profile.php?id=61578937960888" target="_blank" title="Facebook"><i class="fa-brands fa-facebook"></i></a>
-      <a href="https://www.tiktok.com/@purdto" target="_blank" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
-    </div>
-  </div>
-</section>
+    console.log("→ Batch commit starting...");
+    await batch.commit();
+    console.log("✅ Batch commit success");
 
-</main>
+    selected.clear();
+    updateButtonTotal();
 
-<footer>
-  © <span id="year"></span> PURDTO. All Rights Reserved.
-</footer>
+  } catch (error) {
+    console.error("❌ Error committing batch:", error);
+    alert("❌ เกิดข้อผิดพลาดขณะจองที่นั่ง");
+    throw error;
+  }
+};
+ // ✅ Modal confirm date
+    window.confirmDate = function () {
+      const picker = document.getElementById("modalDatePicker");
+      const date = picker.value;
+      if (!date) {
+        alert("กรุณาเลือกวันที่ก่อน");
+        return;
+      }
+      // ซ่อน modal เลือกวัน
+  document.getElementById("dateModal").style.display = "none";
+  // โชว์ modal ใส่จำนวนคน
+  document.getElementById("peopleModal").style.display = "flex";
+  // เก็บวันไว้ใน window ชั่วคราว
+  window.selectedDate = date;
+};
 
-<script>
-   // ✅ LIFF init
+// ✅ ยืนยันจำนวนคน
+window.confirmPeople = function () {
+  const num = parseInt(document.getElementById("peopleInput").value);
+  if (!num || num <= 0) {
+    alert("กรุณาใส่จำนวนคนให้ถูกต้อง");
+    return;
+  }
+  if (num > 5) {
+    // โชว์ modal แจ้งเตือน
+    document.getElementById("peopleModal").style.display = "none";
+    document.getElementById("warningModal").style.display = "flex";
+  } else {
+    // ไปต่อได้เลย
+    window.location.href = `?date=${window.selectedDate}&people=${num}`;
+  }
+};
+
+// ✅ ปิด warning modal
+window.closeWarning = function () {
+  document.getElementById("warningModal").style.display = "none";
+  // ไปต่อแม้จะเกิน 5 (เพราะเตือนแล้ว)
+  window.location.href = `?date=${window.selectedDate}&people=${document.getElementById("peopleInput").value}`;
+};
+// ✅ ปิด modal โต๊ะเต็ม
+window.closeFullModal = function () {
+  document.getElementById("fullModal").style.display = "none";
+};
+    // ✅ ตั้งค่า date picker ใน modal
     window.onload = function () {
+      const today = new Date();
+      const minDate = today.toISOString().split("T")[0];
+      const maxDateObj = new Date(today);
+      maxDateObj.setDate(today.getDate() + 6);
+      const maxDate = maxDateObj.toISOString().split("T")[0];
+
+      document.getElementById("modalDatePicker").min = minDate;
+      document.getElementById("modalDatePicker").max = maxDate;
+
+    
+      
+    // ✅ LIFF init
+   
       liff.init({ liffId: "2007619597-pL1yYoj3" }) // ใส่ LIFF ID จริง
         .then(() => {
           if (!liff.isLoggedIn()) {
@@ -313,34 +262,462 @@
           console.error("LIFF Initialization failed", err);
         });
     };
-  // small: update year
-  document.getElementById('year').textContent = new Date().getFullYear();
 
-  // navbar background on scroll
-  const nav = document.getElementById('nav');
-  window.addEventListener('scroll', ()=> {
-    if(window.scrollY > 30) nav.classList.add('scrolled'); else nav.classList.remove('scrolled');
-  });
-
-  // smooth scroll helper
-  function scrollToSection(sel){
-    const el = document.querySelector(sel);
-    if(!el) return;
-    window.scrollTo({top: el.getBoundingClientRect().top + window.scrollY - 72, behavior:'smooth'});
+    window.bookSeats = async function () {
+  if (selected.size === 0) {
+    alert("กรุณาเลือกที่นั่งก่อน");
+    return;
   }
 
-  // make hero panel vertically centered on small screens (nice touch)
-  function adaptHero(){
-    const heroPanel = document.querySelector('.hero-panel');
-    if(window.innerWidth < 600){
-      heroPanel.style.transform = 'translateY(-10px)';
-    } else {
-      heroPanel.style.transform = 'translateY(0)';
+  const selectedSeats = Array.from(selected);
+  const totalPrice = selectedSeats.length * pricePerSeat;
+
+  try {
+    // ✅ เรียกจองก่อน (รอให้สำเร็จจริง)
+    await window.reserveSeats(window.userId);
+    console.log("→ reserveSeats succeeded");
+
+    // 🔒 ตรวจสอบว่าเบอร์โทรยังคงอยู่ (กันกรณีจองล้มเหลวแต่เบอร์หาย)
+    if (!window.phoneNumber) {
+      console.warn("⚠️ ไม่มีเบอร์โทร — ข้ามการส่ง Flex Message");
+      return;
     }
-  }
-  window.addEventListener('resize', adaptHero);
-  adaptHero();
 
-</script>
+      const flexMessage = {
+        type: "flex",
+        altText: "📌 ยืนยันการจองโต๊ะ",
+        contents: {
+          type: "bubble",
+          styles: {
+            header: { backgroundColor: "#000000" },
+            body: { backgroundColor: "#111111" }
+          },
+          header: {
+            type: "box",
+            layout: "vertical",
+            contents: [{
+              type: "text",
+              text: "📌 ร้าน Fuel of Life",
+              weight: "bold",
+              size: "lg",
+              color: "#facc15"
+            }]
+          },
+          body: {
+            type: "box",
+            layout: "vertical",
+            spacing: "sm",
+            contents: [
+              {
+                type: "text",
+                text: `คุณ ${window.displayName} ได้จองโต๊ะ`,
+                weight: "bold",
+                size: "md",
+                color: "#ffffff"
+              },
+              {
+                type: "text",
+                text: `ที่นั่ง: ${selectedSeats.join(", ")}`,
+                size: "sm",
+                wrap: true,
+                color: "#d4d4d4"
+              },
+              {
+                type: "text",
+                text: `วันที่จอง: ${dateId}`,
+                size: "sm",
+                color: "#d4d4d4"
+              },
+              { type: "text", 
+                text: `เบอร์โทร: ${window.phoneNumber}`,
+                size: "sm", 
+                color: "#facc15" 
+              },
+              {
+                type: "text",
+                text: `รวมทั้งหมด: ${totalPrice} บาท`,
+                size: "sm",
+                weight: "bold",
+                color: "#10b981"
+              }
+            ]
+          }
+        }
+      };
+
+      await liff.sendMessages([flexMessage]);
+    alert("✅ จองสำเร็จกรุณาไปก่อน21:00ก่อนโต๊ะหลุด");
+    liff.closeWindow();
+
+  } catch (err) {
+    console.error("❌ Booking flow error:", err);
+    alert("❌ การจองไม่สำเร็จหรือมีปัญหาระหว่างส่งข้อความ");
+  }
+};
+
+  </script>
+
+  <style>
+    body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Arial', sans-serif;
+
+  /* 🔳 พื้นหลัง */
+  background-color: #4d4d4d;
+  /*background-image: url('https://img5.pic.in.th/file/secure-sv1/531fc8dc-8d1e-48f4-ad67-95dd405a107c.jpg');*/
+  background-repeat: no-repeat;
+  background-position: 40% 68%;   /* ให้อยู่กึ่งกลาง */
+  background-size: 185px;               /* ขนาดโลโก้คงที่ */
+
+  height: 100vh;
+  display: flex;
+  justify-content: center;  /* จัดแนวนอนกลาง */
+  align-items: center;      /* จัดแนวตั้งกลาง */
+}
+
+/* 🟦 กล่อง layout ปรับตามขนาดจอ */
+.layout {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  max-width: 900px;   /* กันไม่ให้ยืดเกินในจอใหญ่ */
+  max-height: 650px;  /* กันไม่ให้สูงเกิน */
+  margin: auto;       /* จัดให้อยู่ตรงกลาง */
+  box-sizing: border-box;
+}
+
+
+    .stage {
+  position: absolute;
+  top: 60%;
+  left: 0;
+  width: 60%;
+  height: 110px;
+  background: #ff3838;
+  border-bottom-left-radius: 200px;
+  border-bottom-right-radius: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding-bottom: 12px;
+  font-size: 28px;
+  font-weight: bold;
+  color: rgb(0, 0, 0);
+
+  /* ✅ หมุน 90 องศาและชิดซ้าย */
+  transform: rotate(-90deg);
+  transform-origin: left center;
+}
+
+.table.rectangle {
+  aspect-ratio: 4 / 1;     /* ปรับอัตราส่วนให้โต๊ะยาว (4:1) */
+  width: 12%;              /* กำหนดขนาดกว้างให้โต๊ะที่เป็นสี่เหลี่ยมผืนผ้า */
+  border-radius: 8%;       /* โค้งมุมโต๊ะ */
+}
+
+.table.selected {
+  background: #10b981;
+  color: white;
+}
+
+.table.reserved {
+  background: #9ca3af;
+  pointer-events: none;
+}
+
+   .door {
+      position: absolute;
+      width: 25px;
+      height: 50px;
+      border: 2px solid rgb(252, 248, 248);
+    }
+
+    .door::after {
+      content: '';
+      position: absolute;
+      width: 5px;
+      height: 5px;
+      background: rgb(255, 255, 255);
+      border-radius: 50%;
+      top: 50%;
+      left: 5px;
+      transform: translateY(-50%);
+    }
+
+    .door-top-right { top: 1%; left: 90%; }
+    .door-bottom-left { top: 80%; left: 40%; }
+
+    #totalBox {
+      position: absolute;
+      bottom: 80px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 18px;
+    }
+
+    
+   .floor-plan {
+  position: relative;
+  width: 100%;
+  height: 600px; /* หรือปรับตามขนาดภาพ */
+}
+
+.table {
+  position: absolute;
+  width: 10%;             /* ยืดหดตาม layout */
+  aspect-ratio: 1 / 1;   /* คงสี่เหลี่ยมจัตุรัส */
+  background: black;
+  color: white;
+  font-weight: bold;
+  font-size: 4vw;        /* ขนาดอักษรปรับตามจอ */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  clip-path: polygon(10% 0%, 90% 0%, 100% 10%, 100% 90%, 90% 100%, 10% 100%, 0% 90%, 0% 10%);
+  cursor: pointer;
+  transition: background 0.3s;
+}
+    .table.reserved {
+      background: #9ca3af;
+      pointer-events: none;
+    }
+    .table.selected {
+      background: #10b981;
+      color: white;
+    }
+    .bar {
+  position: absolute;
+  top: 5%;
+  right: 15%;
+  width: 50px;
+  height: 170px; /* ปรับความสูงตามแผนผัง */
+  background-color: rgb(252, 252, 252);
+  color: rgb(12, 12, 12);
+  writing-mode: vertical-rl;
+  text-align: center;
+  font-weight: bold;
+  font-size: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-left: 2px solid #ffffff; /* เส้นขอบม่วงเข้ม */
+  z-index: 2;
+  transform: rotate(-90deg);
+}
+
+    #confirmBtnContainer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  text-align: center;
+  background: transparent;
+  padding: 12px;
+}
+
+#confirmBtn {
+  padding: 10px 24px;
+  font-size: 16px;
+  background-color: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+
+  #confirmBtn:hover {
+    background-color: #059669;
+  }
+    
+
+.line {
+  width: 50%;                 /* ความกว้างครึ่งหนึ่งของหน้าจอ */
+  height: 2px;                /* ความหนาของเส้น */
+  background: rgb(252, 250, 250); /* สีเส้น */
+  margin: 35% 0;              /* ระยะห่างด้านบน-ล่าง */
+  margin-left: auto;          /* ✅ ดันไปทางขวาสุด */
+}
+.v-dashed {
+  position: absolute;             /* ตั้งค่าให้เส้นประยืดออกจากตำแหน่งที่กำหนด */
+  width: 2px;                     /* ความหนาของเส้น */
+  height: 70%;                   /* ทำให้ความสูงเท่ากับ container parent */
+  border-left: 2px dashed white;  /* เส้นประแนวตั้ง */
+  top: 27%;                         /* เริ่มจากขอบบนสุดของ container */
+  left: 50%;                      /* วางเส้นไว้กลางแนวนอน */
+  transform: translateX(-50%);    /* จัดให้เส้นอยู่กลางตรงๆ */
+}
+
+.monitor {
+            width: 30%;
+            height: 20%;
+            background-color: #2c2c2c; /* สีพื้นหลังเหมือนหน้าจอ */
+            border-radius: 10px; /* มุมกลมเล็กน้อย */
+            border: 5px solid #111; /* ขอบมอนิเตอร์ */
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5); /* เงา */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            margin-left: auto;
+            margin-right: 5%; /* ระยะห่างจากขอบขวา */
+            margin-top: 65%;
+        }
+        .screen-content {
+          width: 90%;
+          height: 90%;
+          background-color: #000; /* สีพื้นหลังในกล่อง */
+          display: flex;
+          justify-content: center; /* จัดแนวนอนให้อยู่กลาง */
+          align-items: flex-start; /* จัดแนวตั้งให้ตัวอักษรอยู่ด้านบน */
+          color: #00ff00; /* สีตัวอักษรเหมือนสีเทคโนโลยี */
+          padding-top: 10px; /* เพิ่มช่องว่างด้านบน (ถ้าต้องการ) */
+        }
+
+         /* 🔳 Modal เต็มจอ */
+    .modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.9);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+    .modal-content {
+      background: #111;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      color: #facc15;
+      font-family: 'Prompt', sans-serif;
+      width: 80%;
+      max-width: 350px;
+    }
+    .modal-content h2 { margin-bottom: 16px; }
+    .modal-content input {
+      margin-top: 12px;
+      padding: 10px;
+      width: 100%;
+      border-radius: 6px;
+      border: 2px solid #facc15;
+      background: #222;
+      color: #facc15;
+      font-size: 16px;
+    }
+    .modal-content button {
+      margin-top: 16px;
+      padding: 10px 20px;
+      background: #10b981;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    #peopleInput {
+  margin-top: 12px;
+  padding: 10px;
+  width: 100%;
+  border-radius: 6px;
+  border: 2px solid #facc15;
+  background: #222;
+  color: #facc15;
+  font-size: 16px;
+}
+
+
+  </style>
+</head>
+<body>
+  <!-- 📅 Modal เต็มจอ -->
+  <div id="dateModal" class="modal">
+    <div class="modal-content">
+      <h2>📅 กรุณาเลือกวันที่</h2>
+      <input type="date" id="modalDatePicker">
+      <button onclick="confirmDate()">ยืนยัน</button>
+    </div>
+  </div>
+
+<!-- 🔳 Modal ใส่จำนวนคน -->
+<div id="peopleModal" class="modal">
+  <div class="modal-content">
+    <h2>👥 กรุณาใส่จำนวนคน</h2>
+    <input type="number" id="peopleInput" placeholder="จำนวนคน" min="1">
+    <button onclick="confirmPeople()">ยืนยัน</button>
+  </div>
+</div>
+
+<!-- 🔳 Modal แจ้งเตือนเกิน 5 คน -->
+<div id="warningModal" class="modal">
+  <div class="modal-content">
+    <h2>⚠ แจ้งเตือน</h2>
+    <p>มาเกิน 5 คน กรุณาจอง 2 โต๊ะขึ้นไป</p>
+    <button onclick="closeWarning()">ตกลง</button>
+  </div>
+</div>
+
+
+  <div class="layout">
+    <div class="stage">STAGE</div>
+
+    <!-- โต๊ะเรียงตามภาพ -->
+    <div class="table" data-table="A1" style="top: 5%; left: 5%;">A1</div>
+    <div class="table" data-table="A2" style="top: 5%; left: 20%;">A2</div>
+    <div class="table" data-table="A3" style="top: 15%; left: 5%;">A3</div>
+
+    <div class="table" data-table="A4" style="top: 15%; left: 20%;">A4</div>
+    <div class="table" data-table="A5" style="top: 25%; left: 25%;">A5</div>
+
+    <div class="table" data-table="B1" style="top: 35%; left: 25%;">B1</div>
+    <div class="table" data-table="B2" style="top: 45%; left: 25%;">B2</div>
+    <div class="table" data-table="B3" style="top: 55%; left: 25%;">B3</div>
+
+    <div class="table" data-table="C5" style="top: 30%; left: 75%; ">C5</div>
+    <div class="table" data-table="C6" style="top: 40%; left: 75%; ">C6</div>
+    <div class="table" data-table="C7" style="top: 50%; left: 75%; ">C7</div>
+    <div class="table" data-table="C8" style="top: 60%; left: 75%; ">C8</div>
+
+    <div class="table" data-table="B4" style="top: 78%; left: 22%;">B4</div>
+    <div class="table" data-table="B5" style="top: 67%; left: 6%;">B5</div>
+
+    <div class="table" data-table="C1" style="top: 30%; left: 55%;">C1</div>
+    <div class="table" data-table="B6" style="top: 78%; left: 6%;">B6</div>
+    <div class="table" data-table="C2" style="top: 40%; left: 55%;">C2</div>
+    <div class="table" data-table="C3" style="top: 50%; left: 55%;">C3</div>
+    <div class="table" data-table="C4" style="top: 60%; left: 55%;">C4</div>
+    
+
+  <div class="bar">Bar</div>
+  <div class="door door-top-right"></div>
+  <div class="door door-bottom-left"></div>
+   <div class="line"></div>
+   <div class="v-dashed"></div>
+
+  <div id="confirmBtnContainer">
+    <button id="confirmBtn" onclick="bookSeats()">จองเลย </button>
+  </div>
+
+  <div class="monitor">
+        <div class="screen-content">
+            นั่งได้สูงสุด
+        </div>
+    </div>
+    <!-- 🔴 Modal โต๊ะเต็ม -->
+<div id="fullModal" class="modal">
+  <div class="modal-content">
+    <h2>😢 โต๊ะเต็มแล้ว</h2>
+    <p>สามารถ Walk In ได้หลัง21:00น.</p>
+    <button onclick="closeFullModal()">ตกลง</button>
+  </div>
+</div>
+
+
+
 </body>
-</html>
+</html>          
