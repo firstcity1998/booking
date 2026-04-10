@@ -161,21 +161,27 @@ while (true) {
   const now = new Date();
   const batch = writeBatch(db);
   let reservedSeats = 0;
+  if (!window.peopleCount || window.peopleCount <= 0) {
+  alert("❌ ไม่พบจำนวนคน กรุณาเลือกใหม่");
+  window.location.href = "/"; // หรือหน้าเลือกวัน
+  return;
+}
 
   try {
     for (const id of selected) {
       const ref = doc(db, "restaurants", restaurantId, "dates", dateId, "tables", id);
 
       batch.set(ref, {
-        status: "reserved",
-        reservedBy: {
-          displayName: window.displayName,
-          userId: window.userId,
-          phone: window.phoneNumber
-        },
-        timestamp: now,
-        bookingDate: dateId
-      }, { merge: true });
+  status: "reserved",
+  people: window.peopleCount, // ✅ เพิ่มตรงนี้
+  reservedBy: {
+    displayName: window.displayName,
+    userId: window.userId,
+    phone: window.phoneNumber
+  },
+  timestamp: now,
+  bookingDate: dateId
+}, { merge: true });
 
       reservedSeats++;
     }
