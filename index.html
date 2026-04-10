@@ -36,10 +36,16 @@
       const urlParams = new URLSearchParams(window.location.search);
       return urlParams.get('date');
     }
+    function getPeopleFromURL() {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('people');
+}
 
 const dateId = getDateFromURL();
+const peopleCount = parseInt(getPeopleFromURL()) || 0;
 
 document.addEventListener("DOMContentLoaded", () => {
+  window.peopleCount = peopleCount;
   
      // 1️⃣ Map โต๊ะทั้งหมด
     document.querySelectorAll(".table").forEach(el => {
@@ -320,6 +326,12 @@ window.closeFullModal = function () {
                 text: `ที่นั่ง: ${selectedSeats.join(", ")}`,
                 size: "sm",
                 wrap: true,
+                color: "#d4d4d4"
+              },
+              {
+                type: "text",
+                text: `จำนวนคน: ${window.peopleCount} คน`,
+                size: "sm",
                 color: "#d4d4d4"
               },
               {
